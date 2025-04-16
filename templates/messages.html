@@ -1,0 +1,864 @@
+{% extends "base.html" %}
+
+{% block title %}消息中心 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="messages-page">
+    <!-- 消息侧边栏 -->
+    <div class="messages-sidebar">
+        <div class="sidebar-header">
+            <h2>消息中心</h2>
+            <button class="btn btn-icon" onclick="composeMessage()">
+                <i class="fas fa-pen"></i>
+            </button>
+        </div>
+        <div class="sidebar-tabs">
+            <button class="tab-btn active" data-tab="conversations">
+                <i class="fas fa-comments"></i> 私信
+                <span class="badge">{{ unread_conversations }}</span>
+            </button>
+            <button class="tab-btn" data-tab="notifications">
+                <i class="fas fa-bell"></i> 通知
+                <span class="badge">{{ unread_notifications }}</span>
+            </button>
+            <button class="tab-btn" data-tab="system">
+                <i class="fas fa-info-circle"></i> 系统消息
+                <span class="badge">{{ unread_system }}</span>
+            </button>
+        </div>
+        <div class="conversations-list">
+            {% for conversation in conversations %}
+            <div class="conversation-item {% if conversation.id == current_conversation.id %}active{% endif %}"
+                 onclick="loadConversation({{ conversation.id }})">
+                <img src="{{ conversation.user.avatar_url }}" alt="{{ conversation.user.username }}" class="conversation-avatar">
+                <div class="conversation-info">
+                    <div class="conversation-header">
+                        <span class="username">{{ conversation.user.username }}</span>
+                        <span class="time">{{ conversation.last_message.created_at.strftime('%H:%M') }}</span>
+                    </div>
+                    <div class="conversation-preview">
+                        <p>{{ conversation.last_message.content }}</p>
+                        {% if conversation.unread_count > 0 %}
+                        <span class="unread-badge">{{ conversation.unread_count }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 消息内容区 -->
+    <div class="messages-content">
+        {% if current_conversation %}
+        <div class="conversation-header">
+            <div class="user-info">
+                <img src="{{ current_conversation.user.avatar_url }}" alt="{{ current_conversation.user.username }}" class="user-avatar">
+                <div class="user-details">
+                    <h3>{{ current_conversation.user.username }}</h3>
+                    <span class="status">在线</span>
+                </div>
+            </div>
+            <div class="conversation-actions">
+                <button class="btn btn-icon" onclick="clearConversation()">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn btn-icon" onclick="blockUser()">
+                    <i class="fas fa-ban"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="messages-list" id="messagesList">
+            {% for message in current_conversation.messages %}
+            <div class="message-item {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                <div class="message-content">
+                    <p>{{ message.content }}</p>
+                    <span class="message-time">{{ message.created_at.strftime('%H:%M') }}</span>
+                </div>
+                {% if message.sender_id == current_user.id %}
+                <div class="message-status">
+                    {% if message.read %}
+                    <i class="fas fa-check-double"></i>
+                    {% else %}
+                    <i class="fas fa-check"></i>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="message-input">
+            <form id="messageForm" onsubmit="sendMessage(event)">
+                <textarea id="messageInput" placeholder="输入消息..." rows="1"></textarea>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <h3>选择或开始一个对话</h3>
+            <p>点击左侧的对话或开始新的对话</p>
+            <button class="btn btn-primary" onclick="composeMessage()">
+                <i class="fas fa-pen"></i> 写消息
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 通知列表 -->
+    <div class="notifications-list" style="display: none;">
+        {% for notification in notifications %}
+        <div class="notification-item {% if not notification.read %}unread{% endif %}"
+             onclick="markNotificationRead({{ notification.id }})">
+            <div class="notification-icon">
+                <i class="fas fa-{{ notification.icon }}"></i>
+            </div>
+            <div class="notification-content">
+                <p>{{ notification.content }}</p>
+                <span class="notification-time">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 系统消息列表 -->
+    <div class="system-messages-list" style="display: none;">
+        {% for message in system_messages %}
+        <div class="system-message-item {% if not message.read %}unread{% endif %}"
+             onclick="markSystemMessageRead({{ message.id }})">
+            <div class="system-message-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="system-message-content">
+                <h4>{{ message.title }}</h4>
+                <p>{{ message.content }}</p>
+                <span class="system-message-time">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 写消息模态框 -->
+<div id="composeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>写消息</h3>
+            <button class="btn btn-icon" onclick="closeComposeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="composeForm" onsubmit="sendNewMessage(event)">
+                <div class="form-group">
+                    <label for="recipient">收件人</label>
+                    <input type="text" id="recipient" name="recipient" required
+                           placeholder="输入用户名" autocomplete="off">
+                    <div id="recipientSuggestions" class="suggestions"></div>
+                </div>
+                <div class="form-group">
+                    <label for="messageContent">消息内容</label>
+                    <textarea id="messageContent" name="content" rows="5" required
+                              placeholder="输入消息内容..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">发送</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/**
+ * 切换标签页
+ */
+document.querySelectorAll('.sidebar-tabs .tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        // 移除所有活动状态
+        document.querySelectorAll('.sidebar-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // 添加当前活动状态
+        button.classList.add('active');
+        
+        // 显示对应内容
+        const tab = button.dataset.tab;
+        document.querySelector('.messages-content').style.display = tab === 'conversations' ? 'flex' : 'none';
+        document.querySelector('.notifications-list').style.display = tab === 'notifications' ? 'block' : 'none';
+        document.querySelector('.system-messages-list').style.display = tab === 'system' ? 'block' : 'none';
+    });
+});
+
+/**
+ * 加载对话
+ */
+function loadConversation(conversationId) {
+    window.location.href = `/messages?conversation=${conversationId}`;
+}
+
+/**
+ * 发送消息
+ */
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const content = document.getElementById('messageInput').value;
+    if (!content.trim()) return;
+    
+    const conversationId = '{{ current_conversation.id }}';
+    fetch(`/messages/${conversationId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 清空输入框
+            document.getElementById('messageInput').value = '';
+            // 重新加载对话
+            loadConversation(conversationId);
+        } else {
+            utils.showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        utils.showAlert('发送失败，请重试', 'error');
+    });
+}
+
+/**
+ * 清空对话
+ */
+function clearConversation() {
+    if (confirm('确定要清空这个对话吗？此操作不可恢复。')) {
+        const conversationId = '{{ current_conversation.id }}';
+        fetch(`/messages/${conversationId}/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/messages';
+            } else {
+                utils.showAlert(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            utils.showAlert('操作失败，请重试', 'error');
+        });
+    }
+}
+
+/**
+ * 拉黑用户
+ */
+function blockUser() {
+    if (confirm('确定要拉黑这个用户吗？拉黑后将无法接收对方的消息。')) {
+        const userId = '{{ current_conversation.user.id }}';
+        fetch(`/users/${userId}/block`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                utils.showAlert('已拉黑用户', 'success');
+                window.location.href = '/messages';
+            } else {
+                utils.showAlert(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            utils.showAlert('操作失败，请重试', 'error');
+        });
+    }
+}
+
+/**
+ * 写新消息
+ */
+function composeMessage() {
+    const modal = document.getElementById('composeModal');
+    modal.style.display = 'block';
+}
+
+/**
+ * 关闭写消息模态框
+ */
+function closeComposeModal() {
+    const modal = document.getElementById('composeModal');
+    modal.style.display = 'none';
+}
+
+/**
+ * 发送新消息
+ */
+function sendNewMessage(event) {
+    event.preventDefault();
+    
+    const recipient = document.getElementById('recipient').value;
+    const content = document.getElementById('messageContent').value;
+    
+    fetch('/messages/new', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ recipient, content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            utils.showAlert('消息已发送', 'success');
+            closeComposeModal();
+            window.location.href = `/messages?conversation=${data.conversation_id}`;
+        } else {
+            utils.showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        utils.showAlert('发送失败，请重试', 'error');
+    });
+}
+
+/**
+ * 标记通知为已读
+ */
+function markNotificationRead(notificationId) {
+    fetch(`/notifications/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const notification = document.querySelector(`.notification-item[onclick*="${notificationId}"]`);
+            notification.classList.remove('unread');
+            updateUnreadCount('notifications');
+        }
+    });
+}
+
+/**
+ * 标记系统消息为已读
+ */
+function markSystemMessageRead(messageId) {
+    fetch(`/system-messages/${messageId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const message = document.querySelector(`.system-message-item[onclick*="${messageId}"]`);
+            message.classList.remove('unread');
+            updateUnreadCount('system');
+        }
+    });
+}
+
+/**
+ * 更新未读消息数
+ */
+function updateUnreadCount(type) {
+    const badge = document.querySelector(`.tab-btn[data-tab="${type}"] .badge`);
+    const count = parseInt(badge.textContent);
+    if (count > 1) {
+        badge.textContent = count - 1;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+/**
+ * 自动调整输入框高度
+ */
+document.getElementById('messageInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+/**
+ * 用户搜索建议
+ */
+let searchTimeout;
+document.getElementById('recipient').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+        document.getElementById('recipientSuggestions').style.display = 'none';
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch(`/users/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            const suggestions = document.getElementById('recipientSuggestions');
+            suggestions.innerHTML = '';
+            
+            if (data.users.length > 0) {
+                data.users.forEach(user => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `
+                        <img src="${user.avatar_url}" alt="${user.username}">
+                        <span>${user.username}</span>
+                    `;
+                    div.onclick = () => {
+                        document.getElementById('recipient').value = user.username;
+                        suggestions.style.display = 'none';
+                    };
+                    suggestions.appendChild(div);
+                });
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        });
+    }, 300);
+});
+
+/**
+ * 初始化页面
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // 滚动到底部
+    const messagesList = document.getElementById('messagesList');
+    if (messagesList) {
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
+    
+    // 添加回车发送功能
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('messageForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 消息中心页面样式 */
+.messages-page {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: calc(100vh - var(--header-height));
+    background-color: var(--surface-color);
+}
+
+/* 侧边栏 */
+.messages-sidebar {
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-tabs .tab-btn {
+    flex: 1;
+    padding: var(--spacing-md);
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.sidebar-tabs .tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.sidebar-tabs .tab-btn.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    padding: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.conversation-item:hover {
+    background-color: var(--background-color);
+}
+
+.conversation-item.active {
+    background-color: var(--primary-color-light);
+}
+
+.conversation-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+}
+
+.username {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.time {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.conversation-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.conversation-preview p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unread-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+/* 消息内容区 */
+.messages-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.conversation-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-details h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.status {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.messages-list {
+    flex: 1;
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.message-item {
+    display: flex;
+    gap: var(--spacing-md);
+    max-width: 70%;
+}
+
+.message-item.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-content {
+    background-color: var(--background-color);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    position: relative;
+}
+
+.message-item.sent .message-content {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.message-time {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    display: block;
+}
+
+.message-item.sent .message-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.message-status {
+    display: flex;
+    align-items: flex-end;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.message-input {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.message-input form {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.message-input textarea {
+    flex: 1;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    resize: none;
+    max-height: 150px;
+    min-height: 40px;
+}
+
+/* 通知列表 */
+.notifications-list,
+.system-messages-list {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+}
+
+.notification-item,
+.system-message-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--background-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.notification-item:hover,
+.system-message-item:hover {
+    transform: translateX(5px);
+}
+
+.notification-item.unread,
+.system-message-item.unread {
+    background-color: var(--primary-color-light);
+}
+
+.notification-icon,
+.system-message-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-content,
+.system-message-content {
+    flex: 1;
+}
+
+.notification-content p,
+.system-message-content p {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.notification-time,
+.system-message-time {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.system-message-content h4 {
+    margin: 0 0 var(--spacing-xs);
+    color: var(--text-primary);
+}
+
+/* 写消息模态框 */
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-xs);
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.suggestion-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-item:hover {
+    background-color: var(--background-color);
+}
+
+.suggestion-item img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* 空状态 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.empty-state h3 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .messages-page {
+        grid-template-columns: 1fr;
+    }
+
+    .messages-sidebar {
+        display: none;
+    }
+
+    .messages-sidebar.active {
+        display: flex;
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .conversation-header {
+        padding: var(--spacing-md);
+    }
+
+    .message-item {
+        max-width: 85%;
+    }
+}
+</style>
+{% endblock %} 

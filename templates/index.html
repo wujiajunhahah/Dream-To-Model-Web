@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}DreamEcho - 梦境建模{% endblock %}
+
+{% block extra_head %}
+<style>
+    #particleCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: linear-gradient(45deg, #000428, #004e92);
+    }
+
+    .hero-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: white;
+        position: relative;
+    }
+
+    .hero-content {
+        max-width: 800px;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+        background: linear-gradient(45deg, #00ff9d, #00d4ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: #e0e0e0;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .cta-button {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: white;
+    }
+
+    .primary-cta {
+        background: linear-gradient(45deg, #00ff9d, #00d4ff);
+    }
+
+    .secondary-cta {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .features-section {
+        padding: 5rem 0;
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        padding: 0 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #00ff9d;
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #00ff9d;
+    }
+
+    .feature-description {
+        color: #e0e0e0;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<canvas id="particleCanvas"></canvas>
+
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">DreamEcho</h1>
+        <p class="hero-subtitle">将你的梦境转化为独特的3D艺术品</p>
+        <div class="cta-buttons">
+            <a href="{{ url_for('create_dream_page') }}" class="cta-button primary-cta">开始创建</a>
+            <a href="{{ url_for('model_library') }}" class="cta-button secondary-cta">探索梦境</a>
+        </div>
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <h3 class="feature-title">AI梦境分析</h3>
+            <p class="feature-description">
+                采用先进的AI技术，深入分析你的梦境描述，捕捉关键元素和情感特征。
+            </p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3 class="feature-title">3D模型生成</h3>
+            <p class="feature-description">
+                将分析结果转化为独特的3D模型，精确还原梦境场景和物体细节。
+            </p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💎</div>
+            <h3 class="feature-title">NFT铸造</h3>
+            <p class="feature-description">
+                将你的梦境艺术品铸造为NFT，在区块链上永久保存，并可进行交易。
+            </p>
+        </div>
+    </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/particle.js') }}"></script>
+{% endblock %} 

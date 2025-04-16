@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - DreamEcho{% endblock %}
+
+{% block extra_head %}
+<style>
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin-right: 2rem;
+    border: 3px solid #4a90e2;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg, #4a90e2, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-bio {
+    font-size: 1.1rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+}
+
+.profile-contact {
+    display: flex;
+    gap: 1rem;
+    color: #4a90e2;
+}
+
+.project-section {
+    margin-top: 3rem;
+}
+
+.section-title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: #4a90e2;
+}
+
+.inspiration-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.inspiration-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
+}
+
+.inspiration-card:hover {
+    transform: translateY(-5px);
+}
+
+.inspiration-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #4a90e2;
+}
+
+.inspiration-content {
+    color: #ccc;
+    line-height: 1.6;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    color: #4a90e2;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #ccc;
+}
+
+.research-section {
+    margin-top: 3rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+}
+
+.research-content {
+    color: #ccc;
+    line-height: 1.8;
+}
+
+.quote {
+    font-style: italic;
+    color: #4a90e2;
+    margin: 2rem 0;
+    padding-left: 1rem;
+    border-left: 4px solid #4a90e2;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <img src="{{ url_for('static', filename='images/avatar.jpg') }}" alt="吴嘉俊" class="profile-avatar">
+        <div class="profile-info">
+            <h1 class="profile-name">吴嘉俊</h1>
+            <p class="profile-bio">DreamEcho项目创始人 | 交互设计师 | 梦境探索者</p>
+            <div class="profile-contact">
+                <span><i class="fas fa-envelope"></i> epwujiajun@icloud.com</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="project-section">
+        <h2 class="section-title">项目理念</h2>
+        <div class="inspiration-grid">
+            <div class="inspiration-card">
+                <h3 class="inspiration-title">灵感来源</h3>
+                <p class="inspiration-content">
+                    梦境不仅是脑海中的幻象，它调动我们的感官，让我们"身临其境"。心理学研究表明，快速眼动睡眠（REM）期间，大脑的情感中枢高度活跃，与清醒时的情感体验有相似之处。
+                </p>
+            </div>
+            <div class="inspiration-card">
+                <h3 class="inspiration-title">项目愿景</h3>
+                <p class="inspiration-content">
+                    通过AI技术和3D建模，将梦境转化为可触摸的实体，让梦不再只是转瞬即逝的记忆。每个模型都是一个故事，一段情感的载体。
+                </p>
+            </div>
+            <div class="inspiration-card">
+                <h3 class="inspiration-title">技术创新</h3>
+                <p class="inspiration-content">
+                    结合Deep Seek API、TripoAPI和NFT技术，打造完整的梦境捕捉与存储生态系统。让每个梦境都成为独特的数字艺术品。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">1500+</div>
+            <div class="stat-label">年均梦境体验</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">80%</div>
+            <div class="stat-label">梦境易逝率</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">60%</div>
+            <div class="stat-label">与过去相关</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">45%</div>
+            <div class="stat-label">影响日常情绪</div>
+        </div>
+    </div>
+
+    <div class="research-section">
+        <h2 class="section-title">研究基础</h2>
+        <div class="research-content">
+            <p>《Nature Neuroscience》2023年研究表明，梦境中的情绪体验会激活与真实经历相同的大脑区域（海马体与杏仁核）。这为我们项目提供了重要的科学依据。</p>
+            <div class="quote">
+                "梦境是通往潜意识的皇家大道" - 弗洛伊德
+            </div>
+            <p>结合MIT媒体实验室的《Dormio》项目研究成果，我们致力于将梦境存档技术推向大众，让每个人都能保存自己的梦境记忆。</p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

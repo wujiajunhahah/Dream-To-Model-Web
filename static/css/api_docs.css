@@ -1,0 +1,358 @@
+/* API文档页面样式 */
+
+/* 页面布局 */
+.api-docs {
+    display: flex;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* 侧边栏样式 */
+.api-sidebar {
+    width: 250px;
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+}
+
+.api-nav {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.api-nav h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.api-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.api-nav li {
+    margin: 0.5rem 0;
+}
+
+.api-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
+
+.api-nav a:hover {
+    color: var(--primary);
+    background: var(--bg-hover);
+}
+
+/* 主要内容区样式 */
+.api-content {
+    flex: 1;
+    max-width: 800px;
+}
+
+.api-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.api-section:last-child {
+    border-bottom: none;
+}
+
+.api-section h2 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.api-section h3 {
+    color: var(--text-primary);
+    margin: 2rem 0 1rem;
+    font-size: 1.4rem;
+}
+
+.api-section h4 {
+    color: var(--text-primary);
+    margin: 1.5rem 0 1rem;
+    font-size: 1.1rem;
+}
+
+/* 信息块样式 */
+.api-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.info-item {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-item h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.info-item code {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+/* 代码块样式 */
+.code-block {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.code-header span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+    background: var(--bg-hover);
+}
+
+.code-block pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.code-block code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* 表格样式 */
+.params-table,
+.rate-limits-table table,
+.error-codes table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.params-table th,
+.params-table td,
+.rate-limits-table th,
+.rate-limits-table td,
+.error-codes th,
+.error-codes td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.params-table th,
+.rate-limits-table th,
+.error-codes th {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.params-table td,
+.rate-limits-table td,
+.error-codes td {
+    color: var(--text-primary);
+}
+
+/* 端点样式 */
+.endpoint-group {
+    margin: 2rem 0;
+}
+
+.endpoint-item {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.endpoint-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.method {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-right: 1rem;
+}
+
+.method.get {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.method.post {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.method.put {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.method.delete {
+    background: var(--error-light);
+    color: var(--error);
+}
+
+.endpoint-header code {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.endpoint-header .description {
+    margin-left: 1rem;
+    color: var(--text-secondary);
+}
+
+.endpoint-details {
+    padding: 1rem;
+}
+
+/* 提示框样式 */
+.api-note {
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.api-note h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.api-note ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.api-note li {
+    color: var(--text-secondary);
+    margin: 0.25rem 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .api-docs {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .api-sidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 2rem;
+    }
+
+    .api-content {
+        max-width: 100%;
+    }
+
+    .api-info {
+        grid-template-columns: 1fr;
+    }
+
+    .endpoint-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .endpoint-header .description {
+        margin-left: 0;
+    }
+}
+
+/* 代码高亮主题 */
+.hljs {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.hljs-keyword {
+    color: var(--primary);
+}
+
+.hljs-string {
+    color: var(--success);
+}
+
+.hljs-number {
+    color: var(--warning);
+}
+
+.hljs-comment {
+    color: var(--text-secondary);
+}
+
+.hljs-function {
+    color: var(--info);
+}
+
+.hljs-params {
+    color: var(--text-primary);
+}
+
+.hljs-title {
+    color: var(--primary);
+}
+
+.hljs-tag {
+    color: var(--error);
+}
+
+.hljs-attr {
+    color: var(--warning);
+} 

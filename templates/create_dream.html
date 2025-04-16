@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block title %}创建梦境 - DreamEcho{% endblock %}
+
+{% block extra_head %}
+<style>
+.dream-creation {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+}
+
+.creation-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.creation-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #4a90e2, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.creation-subtitle {
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+.dream-form {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4a90e2;
+    font-size: 1.1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 22, 36, 0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.processing-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 2rem;
+}
+
+.processing-stage {
+    margin-bottom: 2rem;
+}
+
+.stage-title {
+    font-size: 1.2rem;
+    color: #4a90e2;
+    margin-bottom: 0.5rem;
+}
+
+.stage-description {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(45deg, #4a90e2, #a855f7);
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.time-estimate {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.processing-tips {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.tip-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+}
+
+.submit-button {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(45deg, #4a90e2, #a855f7);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.submit-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.processing-icon {
+    font-size: 3rem;
+    color: #4a90e2;
+    margin-bottom: 1rem;
+    animation: pulse 2s infinite;
+}
+
+.blockchain-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.blockchain-option {
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    background-color: #161b22;
+}
+
+.blockchain-option input[type="radio"] {
+    display: none;
+}
+
+.blockchain-option img {
+    height: 40px;
+    margin-bottom: 0.5rem;
+    vertical-align: middle;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.blockchain-option span {
+    display: block;
+    color: #c9d1d9;
+    font-size: 0.9rem;
+}
+
+.blockchain-option .gas-info {
+    font-size: 0.75rem;
+    color: #8b949e;
+    margin-top: 0.3rem;
+}
+
+.blockchain-option.selected,
+.blockchain-option:hover {
+    border-color: #58a6ff;
+    background-color: rgba(88, 166, 255, 0.1);
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.2);
+}
+
+.trade-settings {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setting-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.setting-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.price-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.currency-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.royalty-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.unit {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.trade-type-select {
+    display: flex;
+    gap: 1rem;
+}
+
+.trade-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.trade-option input {
+    display: none;
+}
+
+.trade-option span {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+}
+
+.trade-option input:checked + span {
+    background: #4a90e2;
+    color: #fff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dream-creation">
+    <div class="creation-header">
+        <h1 class="creation-title">创建你的梦境NFT</h1>
+        <p class="creation-subtitle">记录梦境，选择区块链，设置交易参数，开始铸造你的数字艺术品</p>
+    </div>
+
+    <form id="dreamForm" class="dream-form">
+        <div class="form-group">
+            <label for="dreamTitle" class="form-label">梦境标题</label>
+            <input type="text" id="dreamTitle" name="title" class="form-control" placeholder="为你的梦境起个名字" required>
+        </div>
+
+        <div class="form-group">
+            <label for="dreamDescription" class="form-label">梦境描述</label>
+            <textarea id="dreamDescription" name="description" class="form-control" 
+                      placeholder="描述你的梦境场景、情感和细节..." rows="6" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="dreamTags" class="form-label">标签</label>
+            <input type="text" id="dreamTags" name="tags" class="form-control" 
+                   placeholder="用逗号分隔标签，例如：飞翔,海洋,冒险">
+        </div>
+
+        <fieldset class="form-group">
+            <legend class="form-label">选择铸造区块链</legend>
+            <div class="blockchain-options">
+                <label class="blockchain-option" for="chain-eth">
+                    <input type="radio" id="chain-eth" name="blockchain" value="ethereum" checked>
+                    <img src="{{ url_for('static', filename='images/Ethereum.png') }}" alt="Ethereum">
+                    <span>以太坊 (ETH)</span>
+                    <span class="gas-info">Gas费: 较高</span>
+                </label>
+                <label class="blockchain-option" for="chain-polygon">
+                    <input type="radio" id="chain-polygon" name="blockchain" value="polygon">
+                    <img src="{{ url_for('static', filename='images/Polygon.png') }}" alt="Polygon">
+                    <span>Polygon (MATIC)</span>
+                    <span class="gas-info">Gas费: 较低</span>
+                </label>
+                <label class="blockchain-option" for="chain-bsc">
+                    <input type="radio" id="chain-bsc" name="blockchain" value="bsc">
+                    <img src="{{ url_for('static', filename='images/BSC.png') }}" alt="BSC">
+                    <span>币安智能链 (BNB)</span>
+                    <span class="gas-info">Gas费: 中等</span>
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-group">
+            <legend class="form-label">交易设置</legend>
+            <div class="trade-settings">
+                <div class="form-group">
+                    <label for="initialPrice" class="form-label">初始价格</label>
+                    <div class="input-group">
+                        <input type="number" id="initialPrice" name="price" class="form-control" placeholder="例如：0.5" step="0.01" min="0" required>
+                        <span class="input-group-text" id="currencySymbol">ETH</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="royaltyPercentage" class="form-label">版税比例 (%)</label>
+                    <input type="number" id="royaltyPercentage" name="royalty" class="form-control" value="2.5" step="0.1" min="0" max="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">交易类型</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="tradingType" value="fixed" checked> 固定价格</label>
+                        <label><input type="radio" name="tradingType" value="auction"> 拍卖</label>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <button type="submit" class="submit-button">
+            <i class="fas fa-magic"></i> 开始创建
+        </button>
+    </form>
+</div>
+
+<!-- 处理中遮罩 -->
+<div class="processing-overlay">
+    <div class="processing-content">
+        <div class="processing-icon">
+            <i class="fas fa-brain"></i>
+        </div>
+        
+        <div class="processing-stage" id="stage1">
+            <h3 class="stage-title">阶段 1: 解析梦境内容</h3>
+            <p class="stage-description">正在使用Deep Seek API分析您的梦境描述...</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <p class="time-estimate">预计剩余时间：30秒</p>
+        </div>
+
+        <div class="processing-stage" id="stage2">
+            <h3 class="stage-title">阶段 2: 生成3D模型</h3>
+            <p class="stage-description">使用TripoAPI将梦境场景转化为3D模型...</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <p class="time-estimate">预计剩余时间：2分钟</p>
+        </div>
+
+        <div class="processing-stage" id="stage3">
+            <h3 class="stage-title">阶段 3: 优化与完善</h3>
+            <p class="stage-description">优化模型细节，准备NFT元数据...</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <p class="time-estimate">预计剩余时间：1分钟</p>
+        </div>
+
+        <div class="processing-tips">
+            <p class="tip-text">创作过程中，您可以先去探索其他人的梦境作品...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('dreamForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const processingOverlay = document.querySelector('.processing-overlay');
+    
+    // 显示处理中遮罩
+    submitBtn.disabled = true;
+    processingOverlay.style.display = 'flex';
+    
+    // 模拟处理进度
+    const stages = [
+        { id: 'stage1', duration: 30000 }, // 30秒
+        { id: 'stage2', duration: 120000 }, // 2分钟
+        { id: 'stage3', duration: 60000 } // 1分钟
+    ];
+    
+    try {
+        for (const stage of stages) {
+            const progressBar = document.querySelector(`#${stage.id} .progress-fill`);
+            const timeEstimate = document.querySelector(`#${stage.id} .time-estimate`);
+            
+            await new Promise((resolve) => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 1;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    const remainingSeconds = Math.ceil((stage.duration * (100 - progress)) / (progress * 1000));
+                    timeEstimate.textContent = `预计剩余时间：${remainingSeconds} 秒`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, stage.duration / 100);
+            });
+        }
+        
+        // 提交表单数据
+        const formData = new FormData(form);
+        const response = await fetch('/api/dreams/create', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = `/dream/${data.dream_id}`;
+        } else {
+            alert(data.error || '创建失败，请重试');
+        }
+    } catch (error) {
+        console.error('创建梦境失败:', error);
+        alert('创建失败，请重试');
+    } finally {
+        submitBtn.disabled = false;
+        processingOverlay.style.display = 'none';
+    }
+});
+
+// 根据选择的区块链更新货币选项
+const blockchainRadios = document.querySelectorAll('input[name="blockchain"]');
+const currencySymbol = document.getElementById('currencySymbol');
+const blockchainOptions = document.querySelectorAll('.blockchain-option');
+
+function updateCurrency() {
+    const selectedChain = document.querySelector('input[name="blockchain"]:checked').value;
+    if (selectedChain === 'ethereum') {
+        currencySymbol.textContent = 'ETH';
+    } else if (selectedChain === 'polygon') {
+        currencySymbol.textContent = 'MATIC';
+    } else if (selectedChain === 'bsc') {
+        currencySymbol.textContent = 'BNB';
+    }
+    // 更新选中样式
+    blockchainOptions.forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.getAttribute('for') === `chain-${selectedChain}`) {
+            opt.classList.add('selected');
+        }
+    });
+}
+
+blockchainRadios.forEach(radio => {
+    radio.addEventListener('change', updateCurrency);
+});
+
+// 初始调用以设置默认值和样式
+updateCurrency();
+
+// 显示/隐藏拍卖相关选项
+document.querySelectorAll('input[name="tradingType"]').forEach(input => {
+    input.addEventListener('change', (e) => {
+        const isAuction = e.target.value === 'auction';
+        // 这里可以添加拍卖相关的UI逻辑
+    });
+});
+</script>
+{% endblock %} 

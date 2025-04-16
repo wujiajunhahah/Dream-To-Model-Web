@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>梦境中的双层巴士 - 模型预览</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        #modelViewer {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 26, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00ff9d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .model-info {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.95);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .model-info.visible {
+            opacity: 0.8;
+        }
+
+        .controls-info {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(26, 26, 26, 0.95);
+            padding: 1rem;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls-info:hover {
+            opacity: 1;
+        }
+
+        .controls-info ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        .controls-info li {
+            margin: 0.5rem 0;
+        }
+
+        .info-button {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.8);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            z-index: 101;
+        }
+
+        .info-button:hover {
+            background: rgba(26, 26, 26, 0.95);
+            transform: translateX(-50%) translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div id="loadingText">加载中...</div>
+    </div>
+    
+    <div id="modelViewer"></div>
+    
+    <button class="info-button" id="infoButton">梦境中的双层巴士</button>
+    <div class="model-info" id="modelInfo">
+        这是一个在梦境中出现的双层巴士场景。梦境发生在一个雨天的傍晚，巴士行驶在蜿蜒的山路上。
+    </div>
+
+    <div class="controls-info">
+        <ul>
+            <li>左键拖动：旋转视角</li>
+            <li>右键拖动：平移视角</li>
+            <li>滚轮：缩放</li>
+            <li>双击：重置视角</li>
+        </ul>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, model;
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const infoButton = document.getElementById('infoButton');
+        const modelInfo = document.getElementById('modelInfo');
+        let infoVisible = false;
+
+        infoButton.addEventListener('click', () => {
+            infoVisible = !infoVisible;
+            modelInfo.classList.toggle('visible', infoVisible);
+        });
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            const container = document.getElementById('modelViewer');
+            const aspect = container.clientWidth / container.clientHeight;
+            camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+            camera.position.set(3, 3, 3);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+            controls.maxPolarAngle = Math.PI / 2;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            backLight.position.set(-5, 5, -5);
+            scene.add(backLight);
+
+            const loader = new THREE.OBJLoader();
+            loader.load('/models/bus.obj', 
+                function(object) {
+                    model = object;
+                    
+                    object.traverse(function(child) {
+                        if (child instanceof THREE.Mesh) {
+                            child.material = new THREE.MeshPhongMaterial({
+                                color: 0x808080,
+                                shininess: 30,
+                                specular: 0x404040
+                            });
+                        }
+                    });
+
+                    const box = new THREE.Box3().setFromObject(object);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 2 / maxDim;
+                    object.scale.multiplyScalar(scale);
+                    
+                    object.position.sub(center.multiplyScalar(scale));
+                    
+                    scene.add(object);
+
+                    object.rotation.y = Math.PI / 4;
+                    gsap.to(object.rotation, {
+                        y: object.rotation.y + Math.PI * 2,
+                        duration: 20,
+                        ease: "none",
+                        repeat: -1
+                    });
+
+                    loadingOverlay.style.display = 'none';
+                },
+                function(xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    loadingText.textContent = `加载中 ${percent}%`;
+                },
+                function(error) {
+                    console.error('加载模型时出错:', error);
+                    loadingText.innerHTML = '<span style="color: #ff6b6b;">加载失败，请刷新重试</span>';
+                }
+            );
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('modelViewer');
+            const aspect = container.clientWidth / container.clientHeight;
+            
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(init, 100);
+        });
+
+        document.addEventListener('dblclick', () => {
+            gsap.to(camera.position, {
+                x: 3,
+                y: 3,
+                z: 3,
+                duration: 1,
+                ease: "power2.inOut"
+            });
+            gsap.to(controls.target, {
+                x: 0,
+                y: 0,
+                z: 0,
+                duration: 1,
+                ease: "power2.inOut"
+            });
+        });
+
+        // 点击其他地方关闭信息框
+        document.addEventListener('click', (e) => {
+            if (!modelInfo.contains(e.target) && !infoButton.contains(e.target)) {
+                infoVisible = false;
+                modelInfo.classList.remove('visible');
+            }
+        });
+    </script>
+</body>
+</html> 

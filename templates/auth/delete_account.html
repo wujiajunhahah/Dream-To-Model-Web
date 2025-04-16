@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+
+{% block title %}注销账号 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>注销账号</h1>
+            <p>请确认您要注销账号</p>
+        </div>
+
+        <!-- 警告提示 -->
+        <div class="warning-section">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>此操作不可撤销</h3>
+            <p>注销账号后，您的所有数据将被永久删除，且无法恢复。</p>
+        </div>
+
+        <!-- 注销原因 -->
+        <div class="reason-section">
+            <h3>请选择注销原因</h3>
+            <div class="reason-options">
+                <div class="reason-option">
+                    <input type="radio" id="reason1" name="reason" value="no_need">
+                    <label for="reason1">
+                        <span class="reason-title">不再需要此服务</span>
+                        <span class="reason-desc">已找到其他替代方案或不再需要此服务</span>
+                    </label>
+                </div>
+
+                <div class="reason-option">
+                    <input type="radio" id="reason2" name="reason" value="not_satisfied">
+                    <label for="reason2">
+                        <span class="reason-title">对服务不满意</span>
+                        <span class="reason-desc">服务体验或功能不符合预期</span>
+                    </label>
+                </div>
+
+                <div class="reason-option">
+                    <input type="radio" id="reason3" name="reason" value="privacy">
+                    <label for="reason3">
+                        <span class="reason-title">隐私考虑</span>
+                        <span class="reason-desc">出于个人隐私保护考虑</span>
+                    </label>
+                </div>
+
+                <div class="reason-option">
+                    <input type="radio" id="reason4" name="reason" value="other">
+                    <label for="reason4">
+                        <span class="reason-title">其他原因</span>
+                        <span class="reason-desc">其他未列出的原因</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="other-reason" id="other-reason-input" style="display: none;">
+                <textarea id="other-reason-text" placeholder="请详细说明您的注销原因..."></textarea>
+            </div>
+        </div>
+
+        <!-- 数据删除说明 -->
+        <div class="data-deletion-section">
+            <h3>数据删除说明</h3>
+            <div class="deletion-list">
+                <div class="deletion-item">
+                    <i class="fas fa-user"></i>
+                    <span>个人资料信息</span>
+                </div>
+                <div class="deletion-item">
+                    <i class="fas fa-history"></i>
+                    <span>使用记录和操作历史</span>
+                </div>
+                <div class="deletion-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>已生成的模型文件</span>
+                </div>
+                <div class="deletion-item">
+                    <i class="fas fa-credit-card"></i>
+                    <span>支付和账单信息</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 确认步骤 -->
+        <div class="confirmation-steps">
+            <div class="confirmation-step">
+                <input type="checkbox" id="confirm1">
+                <label for="confirm1">
+                    我已了解注销账号的后果
+                </label>
+            </div>
+
+            <div class="confirmation-step">
+                <input type="checkbox" id="confirm2">
+                <label for="confirm2">
+                    我确认要永久删除所有数据
+                </label>
+            </div>
+
+            <div class="confirmation-step">
+                <input type="checkbox" id="confirm3">
+                <label for="confirm3">
+                    我明白此操作不可撤销
+                </label>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <button type="button" class="btn-danger" onclick="confirmDeletion()" disabled>
+                <i class="fas fa-trash-alt"></i>
+                确认注销账号
+            </button>
+            <button type="button" class="btn-secondary" onclick="window.history.back()">
+                <i class="fas fa-times"></i>
+                取消
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/**
+ * 监听注销原因选择
+ */
+document.querySelectorAll('input[name="reason"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const otherReasonInput = document.getElementById('other-reason-input');
+        otherReasonInput.style.display = this.value === 'other' ? 'block' : 'none';
+        checkConfirmation();
+    });
+});
+
+/**
+ * 监听确认步骤复选框
+ */
+document.querySelectorAll('.confirmation-step input').forEach(checkbox => {
+    checkbox.addEventListener('change', checkConfirmation);
+});
+
+/**
+ * 检查是否满足确认条件
+ */
+function checkConfirmation() {
+    const reasonSelected = document.querySelector('input[name="reason"]:checked');
+    const allConfirmed = Array.from(document.querySelectorAll('.confirmation-step input'))
+        .every(input => input.checked);
+    
+    const confirmButton = document.querySelector('.btn-danger');
+    confirmButton.disabled = !reasonSelected || !allConfirmed;
+}
+
+/**
+ * 确认注销账号
+ */
+function confirmDeletion() {
+    const reason = document.querySelector('input[name="reason"]:checked').value;
+    const otherReason = reason === 'other' ? 
+        document.getElementById('other-reason-text').value : null;
+    
+    if (!reason) {
+        showAlert('请选择注销原因', 'error');
+        return;
+    }
+
+    if (reason === 'other' && !otherReason.trim()) {
+        showAlert('请填写具体原因', 'error');
+        return;
+    }
+
+    const confirmButton = document.querySelector('.btn-danger');
+    const originalText = confirmButton.innerHTML;
+    
+    // 显示加载状态
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+    
+    fetch('/auth/delete-account', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            reason: reason,
+            other_reason: otherReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('账号已成功注销', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('注销失败，请重试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        confirmButton.disabled = false;
+        confirmButton.innerHTML = originalText;
+    });
+}
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 警告部分样式 */
+.warning-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    border-radius: var(--border-radius);
+    margin: 2rem 0;
+}
+
+.warning-section i {
+    font-size: 3rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+}
+
+.warning-section h3 {
+    margin: 0 0 0.5rem;
+    color: var(--danger);
+}
+
+.warning-section p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* 注销原因样式 */
+.reason-section {
+    margin: 2rem 0;
+}
+
+.reason-section h3 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+}
+
+.reason-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reason-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reason-option:hover {
+    background: var(--bg-hover);
+}
+
+.reason-option input[type="radio"] {
+    margin-top: 0.25rem;
+}
+
+.reason-option label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+
+.reason-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.reason-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* 其他原因输入框样式 */
+.other-reason {
+    margin-top: 1rem;
+}
+
+.other-reason textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    resize: vertical;
+}
+
+.other-reason textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* 数据删除说明样式 */
+.data-deletion-section {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.data-deletion-section h3 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+}
+
+.deletion-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.deletion-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.deletion-item i {
+    color: var(--text-secondary);
+}
+
+/* 确认步骤样式 */
+.confirmation-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.confirmation-step {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.confirmation-step input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.confirmation-step label {
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: var(--danger-dark);
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* 加载动画 */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-danger,
+    .btn-secondary {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}联系客服 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="support-container">
+    <div class="support-header">
+        <h1>联系客服</h1>
+        <p>我们随时为您提供帮助</p>
+    </div>
+
+    <div class="support-content">
+        <!-- 常见问题 -->
+        <div class="faq-section">
+            <h2>常见问题</h2>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>忘记密码怎么办？</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>您可以通过以下步骤找回密码：</p>
+                        <ol>
+                            <li>点击登录页面的"忘记密码"链接</li>
+                            <li>输入您的注册邮箱</li>
+                            <li>在邮箱中查收密码重置链接</li>
+                            <li>点击链接设置新密码</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>如何修改个人信息？</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>登录后，您可以在个人中心页面修改以下信息：</p>
+                        <ul>
+                            <li>头像</li>
+                            <li>用户名</li>
+                            <li>个人简介</li>
+                            <li>联系方式</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>如何下载生成的模型？</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>在模型详情页面，您可以：</p>
+                        <ol>
+                            <li>点击"下载"按钮</li>
+                            <li>选择需要的文件格式</li>
+                            <li>等待文件准备完成</li>
+                            <li>开始下载</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 联系表单 -->
+        <div class="contact-section">
+            <h2>联系我们</h2>
+            <form class="contact-form" method="POST" action="{{ url_for('auth.contact_support') }}">
+                {{ form.csrf_token }}
+
+                <div class="form-group">
+                    <label for="category">问题类型</label>
+                    <select id="category" name="category" required>
+                        <option value="">请选择问题类型</option>
+                        <option value="account">账号相关</option>
+                        <option value="password">密码问题</option>
+                        <option value="model">模型相关</option>
+                        <option value="payment">支付问题</option>
+                        <option value="other">其他问题</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">主题</label>
+                    <input type="text" id="subject" name="subject" required
+                           placeholder="请简要描述您的问题">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">问题描述</label>
+                    <textarea id="description" name="description" rows="6" required
+                              placeholder="请详细描述您遇到的问题，包括：&#10;1. 问题发生的具体情况&#10;2. 您已尝试的解决方法&#10;3. 错误提示信息（如有）"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">联系邮箱</label>
+                    <input type="email" id="email" name="email" required
+                           value="{{ current_user.email if current_user.is_authenticated else '' }}"
+                           placeholder="请输入您的联系邮箱">
+                </div>
+
+                <div class="form-group">
+                    <label for="attachments">附件</label>
+                    <div class="file-upload">
+                        <input type="file" id="attachments" name="attachments" multiple
+                               accept="image/*,.pdf,.txt">
+                        <div class="upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>点击或拖拽文件到此处</span>
+                            <p>支持图片、PDF、文本文件，最大10MB</p>
+                        </div>
+                    </div>
+                    <div id="file-list" class="file-list"></div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-block">
+                    提交问题
+                </button>
+            </form>
+        </div>
+
+        <!-- 其他联系方式 -->
+        <div class="other-contact">
+            <h2>其他联系方式</h2>
+            <div class="contact-methods">
+                <div class="contact-method">
+                    <i class="fas fa-comments"></i>
+                    <h3>在线客服</h3>
+                    <p>工作时间：周一至周五 9:00-18:00</p>
+                    <button class="btn-secondary" onclick="openChat()">
+                        开始对话
+                    </button>
+                </div>
+
+                <div class="contact-method">
+                    <i class="fas fa-envelope"></i>
+                    <h3>邮件支持</h3>
+                    <p>24小时内回复</p>
+                    <a href="mailto:support@dreammodel.com" class="btn-secondary">
+                        发送邮件
+                    </a>
+                </div>
+
+                <div class="contact-method">
+                    <i class="fas fa-phone"></i>
+                    <h3>电话支持</h3>
+                    <p>工作时间：周一至周五 9:00-18:00</p>
+                    <a href="tel:+86-123-4567-8900" class="btn-secondary">
+                        400-123-4567
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/**
+ * 切换FAQ显示/隐藏
+ * @param {HTMLElement} element - FAQ问题元素
+ */
+function toggleFaq(element) {
+    const answer = element.nextElementSibling;
+    const icon = element.querySelector('i');
+    
+    if (answer.style.maxHeight) {
+        answer.style.maxHeight = null;
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    } else {
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+}
+
+/**
+ * 处理文件上传
+ */
+const fileInput = document.getElementById('attachments');
+const fileList = document.getElementById('file-list');
+const uploadPlaceholder = document.querySelector('.upload-placeholder');
+
+fileInput.addEventListener('change', handleFiles);
+uploadPlaceholder.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadPlaceholder.classList.add('dragover');
+});
+uploadPlaceholder.addEventListener('dragleave', () => {
+    uploadPlaceholder.classList.remove('dragover');
+});
+uploadPlaceholder.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadPlaceholder.classList.remove('dragover');
+    handleFiles({ target: { files: e.dataTransfer.files } });
+});
+
+function handleFiles(e) {
+    const files = Array.from(e.target.files);
+    fileList.innerHTML = '';
+    
+    files.forEach(file => {
+        if (file.size > 10 * 1024 * 1024) {
+            showAlert('文件大小不能超过10MB', 'error');
+            return;
+        }
+        
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+            <i class="fas fa-${getFileIcon(file.name)}"></i>
+            <span>${file.name}</span>
+            <button type="button" class="remove-file">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        fileItem.querySelector('.remove-file').onclick = () => {
+            fileItem.remove();
+            if (fileList.children.length === 0) {
+                fileList.style.display = 'none';
+            }
+        };
+        
+        fileList.appendChild(fileItem);
+    });
+    
+    if (files.length > 0) {
+        fileList.style.display = 'block';
+    }
+}
+
+/**
+ * 获取文件图标
+ * @param {string} filename - 文件名
+ * @returns {string} 图标类名
+ */
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    switch (ext) {
+        case 'pdf':
+            return 'file-pdf';
+        case 'txt':
+            return 'file-alt';
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+        case 'gif':
+            return 'file-image';
+        default:
+            return 'file';
+    }
+}
+
+/**
+ * 打开在线客服对话
+ */
+function openChat() {
+    // 实现在线客服对话功能
+}
+
+/**
+ * 表单验证
+ */
+document.querySelector('.contact-form').addEventListener('submit', function(e) {
+    const description = document.getElementById('description').value;
+    
+    if (description.length < 20) {
+        e.preventDefault();
+        showAlert('请详细描述您的问题（至少20个字符）', 'error');
+        return;
+    }
+    
+    // 显示加载状态
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+    
+    // 提交后恢复按钮状态
+    this.addEventListener('submit', () => {
+        setTimeout(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        }, 2000);
+    });
+});
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 容器样式 */
+.support-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.support-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.support-header h1 {
+    font-size: 2.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.support-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.support-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+}
+
+/* FAQ样式 */
+.faq-section {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.faq-section h2 {
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.faq-item {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.faq-question {
+    padding: 1.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.faq-question i {
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.faq-answer p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+}
+
+.faq-answer ul,
+.faq-answer ol {
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.faq-answer li {
+    margin-bottom: 0.5rem;
+}
+
+/* 联系表单样式 */
+.contact-section {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.contact-section h2 {
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.file-upload {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-upload:hover,
+.file-upload.dragover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.upload-placeholder {
+    color: var(--text-secondary);
+}
+
+.upload-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.upload-placeholder p {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+}
+
+.file-list {
+    margin-top: 1rem;
+    display: none;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+}
+
+.file-item i {
+    color: var(--primary);
+}
+
+.file-item span {
+    flex: 1;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.remove-file {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.remove-file:hover {
+    color: var(--error);
+}
+
+/* 其他联系方式样式 */
+.other-contact {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.other-contact h2 {
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.contact-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.contact-method {
+    text-align: center;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    transition: transform 0.3s ease;
+}
+
+.contact-method:hover {
+    transform: translateY(-5px);
+}
+
+.contact-method i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.contact-method h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.contact-method p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .support-container {
+        padding: 1rem;
+    }
+
+    .support-header h1 {
+        font-size: 2rem;
+    }
+
+    .contact-methods {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %} 

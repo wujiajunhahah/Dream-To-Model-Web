@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>注册账号</h1>
+            <p>加入我们，开始您的3D建模之旅！</p>
+        </div>
+
+        <!-- 注册表单 -->
+        <form class="auth-form" method="POST" action="{{ url_for('auth.register') }}">
+            {{ form.csrf_token }}
+            
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required
+                       placeholder="请选择用户名">
+                {% if form.username.errors %}
+                <div class="error-message">
+                    {% for error in form.username.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="email">邮箱</label>
+                <input type="email" id="email" name="email" required
+                       placeholder="请输入邮箱地址">
+                {% if form.email.errors %}
+                <div class="error-message">
+                    {% for error in form.email.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <div class="password-input">
+                    <input type="password" id="password" name="password" required
+                           placeholder="请设置密码">
+                    <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar"></div>
+                    <span class="strength-text">密码强度：<span class="strength-value">弱</span></span>
+                </div>
+                {% if form.password.errors %}
+                <div class="error-message">
+                    {% for error in form.password.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">确认密码</label>
+                <div class="password-input">
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                           placeholder="请再次输入密码">
+                    <button type="button" class="toggle-password" onclick="togglePassword('confirm_password')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                {% if form.confirm_password.errors %}
+                <div class="error-message">
+                    {% for error in form.confirm_password.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="terms" required>
+                    <span>我已阅读并同意 <a href="#" onclick="showTerms()">服务条款</a> 和 <a href="#" onclick="showPrivacy()">隐私政策</a></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+                注册
+            </button>
+        </form>
+
+        <!-- 社交媒体注册 -->
+        <div class="social-login">
+            <div class="divider">
+                <span>或</span>
+            </div>
+
+            <div class="social-buttons">
+                <button type="button" class="btn-social btn-google">
+                    <i class="fab fa-google"></i>
+                    <span>使用Google账号注册</span>
+                </button>
+
+                <button type="button" class="btn-social btn-github">
+                    <i class="fab fa-github"></i>
+                    <span>使用GitHub账号注册</span>
+                </button>
+
+                <button type="button" class="btn-social btn-wechat">
+                    <i class="fab fa-weixin"></i>
+                    <span>使用微信账号注册</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 登录链接 -->
+        <div class="auth-footer">
+            <p>已有账号？ <a href="{{ url_for('auth.login') }}">立即登录</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- 服务条款模态框 -->
+<div id="terms-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>服务条款</h2>
+            <button class="close-modal" onclick="closeModal('terms-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="terms-content">
+                <h3>1. 服务说明</h3>
+                <p>梦境建模系统是一个基于AI的3D模型生成平台，为用户提供将梦境描述转换为3D模型的服务。</p>
+                
+                <h3>2. 用户责任</h3>
+                <p>用户在使用本服务时应遵守相关法律法规，不得上传或生成违法、侵权或不当内容。</p>
+                
+                <h3>3. 知识产权</h3>
+                <p>用户生成的模型版权归用户所有，但平台保留对模型进行展示、推广和优化的权利。</p>
+                
+                <h3>4. 服务变更</h3>
+                <p>平台保留随时修改或终止服务的权利，且无需事先通知用户。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 隐私政策模态框 -->
+<div id="privacy-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>隐私政策</h2>
+            <button class="close-modal" onclick="closeModal('privacy-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="privacy-content">
+                <h3>1. 信息收集</h3>
+                <p>我们收集用户提供的基本信息，包括用户名、邮箱地址等。</p>
+                
+                <h3>2. 信息使用</h3>
+                <p>收集的信息用于提供和改进服务，以及向用户发送相关通知。</p>
+                
+                <h3>3. 信息保护</h3>
+                <p>我们采取适当的技术和组织措施保护用户信息的安全。</p>
+                
+                <h3>4. 信息共享</h3>
+                <p>未经用户同意，我们不会与第三方共享用户信息。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/**
+ * 切换密码显示/隐藏
+ * @param {string} inputId - 密码输入框的ID
+ */
+function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleButton = passwordInput.parentElement.querySelector('.toggle-password i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleButton.classList.remove('fa-eye');
+        toggleButton.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleButton.classList.remove('fa-eye-slash');
+        toggleButton.classList.add('fa-eye');
+    }
+}
+
+/**
+ * 检查密码强度
+ */
+document.getElementById('password').addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strength = checkPasswordStrength(password);
+    updatePasswordStrength(strength);
+});
+
+/**
+ * 检查密码强度
+ * @param {string} password - 密码
+ * @returns {number} 密码强度值（0-4）
+ */
+function checkPasswordStrength(password) {
+    let strength = 0;
+    
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/)) strength++;
+    if (password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    
+    return strength;
+}
+
+/**
+ * 更新密码强度显示
+ * @param {number} strength - 密码强度值
+ */
+function updatePasswordStrength(strength) {
+    const strengthBar = document.querySelector('.strength-bar');
+    const strengthValue = document.querySelector('.strength-value');
+    const strengthText = document.querySelector('.strength-text');
+    
+    let strengthClass = '';
+    let strengthTextValue = '';
+    
+    switch(strength) {
+        case 0:
+        case 1:
+            strengthClass = 'weak';
+            strengthTextValue = '弱';
+            break;
+        case 2:
+            strengthClass = 'medium';
+            strengthTextValue = '中';
+            break;
+        case 3:
+            strengthClass = 'strong';
+            strengthTextValue = '强';
+            break;
+        default:
+            strengthClass = 'very-strong';
+            strengthTextValue = '很强';
+    }
+    
+    strengthBar.className = 'strength-bar ' + strengthClass;
+    strengthValue.textContent = strengthTextValue;
+    strengthText.className = 'strength-text ' + strengthClass;
+}
+
+/**
+ * 显示模态框
+ * @param {string} modalId - 模态框ID
+ */
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * 关闭模态框
+ * @param {string} modalId - 模态框ID
+ */
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+/**
+ * 显示服务条款
+ */
+function showTerms() {
+    showModal('terms-modal');
+}
+
+/**
+ * 显示隐私政策
+ */
+function showPrivacy() {
+    showModal('privacy-modal');
+}
+
+/**
+ * 表单验证
+ */
+document.querySelector('.auth-form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        showAlert('两次输入的密码不一致', 'error');
+    }
+    
+    if (checkPasswordStrength(password) < 3) {
+        e.preventDefault();
+        showAlert('密码强度不足，请加强密码', 'error');
+    }
+});
+</script>
+{% endblock %} 

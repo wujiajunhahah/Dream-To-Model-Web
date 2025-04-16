@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+
+{% block title %}两步验证 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>两步验证</h1>
+            <p>为您的账号添加额外的安全保护</p>
+        </div>
+
+        <!-- 设置步骤 -->
+        <div class="setup-steps">
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">选择验证方式</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">设置验证器</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">完成设置</div>
+                </div>
+            </div>
+
+            <!-- 步骤1：选择验证方式 -->
+            <div class="step-content active" id="step1">
+                <h3>选择验证方式</h3>
+                <div class="verification-methods">
+                    <div class="method-card" onclick="selectMethod('authenticator')">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h4>验证器应用</h4>
+                        <p>使用 Google Authenticator 等验证器应用</p>
+                        <div class="method-features">
+                            <span><i class="fas fa-check"></i> 无需网络连接</span>
+                            <span><i class="fas fa-check"></i> 支持多个账号</span>
+                            <span><i class="fas fa-check"></i> 安全可靠</span>
+                        </div>
+                    </div>
+
+                    <div class="method-card" onclick="selectMethod('sms')">
+                        <i class="fas fa-sms"></i>
+                        <h4>短信验证</h4>
+                        <p>通过手机短信接收验证码</p>
+                        <div class="method-features">
+                            <span><i class="fas fa-check"></i> 操作简单</span>
+                            <span><i class="fas fa-check"></i> 无需安装应用</span>
+                            <span><i class="fas fa-check"></i> 实时接收</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤2：设置验证器 -->
+            <div class="step-content" id="step2">
+                <h3>设置验证器</h3>
+                <div class="setup-instructions">
+                    <ol>
+                        <li>下载并安装验证器应用（如 Google Authenticator）</li>
+                        <li>打开应用，点击"添加账号"</li>
+                        <li>选择"扫描二维码"</li>
+                        <li>扫描下方二维码</li>
+                    </ol>
+                </div>
+
+                <div class="qr-section">
+                    <div class="qr-code">
+                        <img src="{{ qr_code_url }}" alt="验证器二维码">
+                    </div>
+                    <div class="qr-info">
+                        <p>如果无法扫描二维码，请手动输入以下密钥：</p>
+                        <div class="secret-key">
+                            <code>{{ secret_key }}</code>
+                            <button type="button" onclick="copySecretKey()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verification-test">
+                    <h4>验证设置</h4>
+                    <p>请输入验证器生成的6位验证码：</p>
+                    <div class="verification-input">
+                        <input type="text" id="verification-code" maxlength="6" pattern="[0-9]{6}"
+                               placeholder="000000">
+                        <button type="button" class="btn-primary" onclick="verifyCode()">
+                            验证
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤3：完成设置 -->
+            <div class="step-content" id="step3">
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>两步验证已启用</h3>
+                    <p>您的账号现在受到额外的安全保护</p>
+                </div>
+
+                <div class="backup-codes">
+                    <h4>备份验证码</h4>
+                    <p>请保存这些备份验证码，在无法使用验证器时使用：</p>
+                    <div class="codes-grid">
+                        {% for code in backup_codes %}
+                        <div class="backup-code">
+                            <code>{{ code }}</code>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="downloadBackupCodes()">
+                        <i class="fas fa-download"></i>
+                        下载备份验证码
+                    </button>
+                </div>
+
+                <div class="next-steps">
+                    <h4>下一步</h4>
+                    <ul>
+                        <li>保存备份验证码到安全的地方</li>
+                        <li>测试两步验证登录</li>
+                        <li>了解如何管理两步验证设置</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="step-navigation">
+            <button type="button" class="btn-secondary" onclick="previousStep()" style="display: none;">
+                <i class="fas fa-arrow-left"></i>
+                上一步
+            </button>
+            <button type="button" class="btn-primary" onclick="nextStep()">
+                下一步
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStep = 1;
+let selectedMethod = null;
+
+/**
+ * 选择验证方式
+ * @param {string} method - 验证方式
+ */
+function selectMethod(method) {
+    selectedMethod = method;
+    document.querySelectorAll('.method-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+}
+
+/**
+ * 下一步
+ */
+function nextStep() {
+    if (currentStep === 1 && !selectedMethod) {
+        showAlert('请选择验证方式', 'error');
+        return;
+    }
+
+    if (currentStep === 2) {
+        const code = document.getElementById('verification-code').value;
+        if (!code || code.length !== 6) {
+            showAlert('请输入6位验证码', 'error');
+            return;
+        }
+        verifyCode();
+        return;
+    }
+
+    currentStep++;
+    updateSteps();
+}
+
+/**
+ * 上一步
+ */
+function previousStep() {
+    currentStep--;
+    updateSteps();
+}
+
+/**
+ * 更新步骤显示
+ */
+function updateSteps() {
+    // 更新步骤指示器
+    document.querySelectorAll('.step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        step.classList.toggle('active', stepNum === currentStep);
+        step.classList.toggle('completed', stepNum < currentStep);
+    });
+
+    // 更新步骤内容
+    document.querySelectorAll('.step-content').forEach(content => {
+        content.classList.toggle('active', content.id === `step${currentStep}`);
+    });
+
+    // 更新导航按钮
+    const prevButton = document.querySelector('.step-navigation .btn-secondary');
+    const nextButton = document.querySelector('.step-navigation .btn-primary');
+    
+    prevButton.style.display = currentStep === 1 ? 'none' : 'block';
+    nextButton.innerHTML = currentStep === 3 ? '完成' : '下一步 <i class="fas fa-arrow-right"></i>';
+}
+
+/**
+ * 验证验证码
+ */
+function verifyCode() {
+    const code = document.getElementById('verification-code').value;
+    const button = document.querySelector('.verification-input button');
+    const originalText = button.innerHTML;
+    
+    // 显示加载状态
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 验证中...';
+    
+    fetch('/auth/verify-2fa', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            nextStep();
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('验证失败，请重试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+/**
+ * 复制密钥
+ */
+function copySecretKey() {
+    const secretKey = document.querySelector('.secret-key code').textContent;
+    navigator.clipboard.writeText(secretKey)
+        .then(() => showAlert('密钥已复制到剪贴板', 'success'))
+        .catch(() => showAlert('复制失败，请手动复制', 'error'));
+}
+
+/**
+ * 下载备份验证码
+ */
+function downloadBackupCodes() {
+    const codes = Array.from(document.querySelectorAll('.backup-code code'))
+        .map(code => code.textContent)
+        .join('\n');
+    
+    const blob = new Blob([codes], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup-codes.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 步骤指示器样式 */
+.setup-steps {
+    margin: 2rem 0;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border-color);
+    z-index: 1;
+}
+
+.step {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.step.completed .step-number {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.step-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.step.active .step-label {
+    color: var(--primary);
+}
+
+/* 验证方式卡片样式 */
+.verification-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.method-card {
+    background: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.method-card:hover {
+    transform: translateY(-5px);
+}
+
+.method-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.method-card i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.method-card h4 {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.method-card p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.method-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.method-features span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.method-features i {
+    color: var(--success);
+    font-size: 1rem;
+}
+
+/* 二维码部分样式 */
+.qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.qr-code {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.qr-code img {
+    width: 200px;
+    height: 200px;
+}
+
+.secret-key {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+}
+
+.secret-key code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.secret-key button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.secret-key button:hover {
+    color: var(--primary);
+}
+
+/* 验证码输入样式 */
+.verification-test {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.verification-test h4 {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.verification-test p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+}
+
+.verification-input {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.verification-input input {
+    width: 150px;
+    text-align: center;
+    font-size: 1.2rem;
+    letter-spacing: 0.2rem;
+}
+
+/* 成功消息样式 */
+.success-message {
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.success-message i {
+    font-size: 4rem;
+    color: var(--success);
+    margin-bottom: 1rem;
+}
+
+.success-message h3 {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.success-message p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* 备份验证码样式 */
+.backup-codes {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.backup-codes h4 {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.backup-codes p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+}
+
+.codes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.backup-code {
+    background: var(--surface-color);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.backup-code code {
+    font-family: monospace;
+    color: var(--text-primary);
+}
+
+/* 下一步样式 */
+.next-steps {
+    margin: 2rem 0;
+}
+
+.next-steps h4 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.next-steps li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.next-steps li::before {
+    content: '•';
+    color: var(--primary);
+}
+
+/* 导航按钮样式 */
+.step-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+/* 加载动画 */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .step-indicator {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .step-indicator::before {
+        display: none;
+    }
+
+    .verification-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .verification-input {
+        flex-direction: column;
+    }
+
+    .verification-input input {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}梦境 3D 展示 - {{ model.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Ensure body has padding for fixed navbar */
+    body {
+        padding-top: 80px; /* Adjust based on actual navbar height */
+        /* Remove overflow: hidden; if it exists */
+    }
+
+    #container {
+        display: flex;
+        /* Remove fixed height: 100vh; */
+        /* Let it take natural height or set min-height */
+        min-height: calc(100vh - 80px - 4rem); /* Example: viewport height minus navbar and footer padding */
+        width: 100%;
+        background-color: #121212; /* Ensure container background */
+        color: #e0e0e0;
+    }
+    #model-viewer {
+        flex-grow: 1;
+        position: relative;
+        background-color: #1a1a1a;
+        min-height: 500px; /* Give viewer a minimum height */
+    }
+    #info-panel {
+        width: 350px;
+        padding: 25px;
+        background-color: #1e1e1e;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid #333;
+        /* Removed overflow-y: auto; let the page scroll */
+    }
+    .logo img {
+        width: 150px;
+        margin-bottom: 20px;
+    }
+    .creator-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 25px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 20px;
+    }
+    .creator-info img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+        border: 2px solid #444;
+    }
+    .creator-name {
+        font-weight: bold;
+        color: #ffffff;
+    }
+    .creator-handle {
+        font-size: 0.9em;
+        color: #aaa;
+    }
+    .dream-details h2 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+        color: #00bcd4; /* Accent color */
+        border-bottom: 1px solid #444;
+        padding-bottom: 8px;
+    }
+    .dream-details p {
+        font-size: 0.95em;
+        line-height: 1.6;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    .keywords span {
+        display: inline-block;
+        /* background-color: #333; */ /* 移除默认背景 */
+        color: #e0e0e0; /* 统一文字颜色 */
+        padding: 6px 12px; /* 调整 padding */
+        border-radius: 15px;
+        font-size: 0.85em; /* 稍大一点 */
+        margin-right: 8px;
+        margin-bottom: 8px;
+        font-weight: 500;
+        transition: transform 0.2s ease;
+    }
+    .keywords span:hover {
+        transform: translateY(-2px);
+    }
+    /* 定义几种颜色 */
+    .keywords span.color-1 { background-color: #007bff; }
+    .keywords span.color-2 { background-color: #6f42c1; }
+    .keywords span.color-3 { background-color: #28a745; }
+    .keywords span.color-4 { background-color: #dc3545; }
+    .keywords span.color-5 { background-color: #fd7e14; }
+    .actions {
+        margin-top: auto; /* Push actions to the bottom */
+        padding-top: 20px;
+        border-top: 1px solid #333;
+        display: flex;
+        gap: 15px;
+    }
+    .action-button {
+        flex-grow: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: center;
+        transition: background-color 0.3s ease;
+    }
+    .like-button {
+        background-color: #444;
+        color: #fff;
+    }
+    .like-button:hover {
+        background-color: #555;
+    }
+    .follow-button {
+        background-color: #00bcd4;
+        color: #121212;
+    }
+    .follow-button:hover {
+        background-color: #00acc1;
+    }
+    #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 1.2em;
+        background: rgba(0,0,0,0.7);
+        padding: 15px 25px;
+        border-radius: 8px;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="container">
+    <div id="model-viewer">
+        <div id="loading">加载模型中...</div>
+        {# Canvas will be added here by Three.js #}
+    </div>
+    <div id="info-panel">
+        <div class="logo">
+            {# Assume logo is in static/images #}
+            <img src="{{ url_for('static', filename='images/dreamecho_logo.png') }}" alt="DreamEcho Logo">
+        </div>
+        <div class="creator-info">
+            <img src="{{ model.creator_avatar }}" alt="Creator Avatar">
+            <div>
+                <div class="creator-name">{{ model.creator_name }}</div>
+            </div>
+        </div>
+        <div class="dream-details">
+            <h2>{{ model.title }}</h2>
+            <p>{{ model.description }}</p>
+            <div class="keywords">
+                {# Check if tags is a list or string before iterating #}
+                {% if model.tags and model.tags is iterable and model.tags is not string %}
+                    {% for tag in model.tags %}
+                        <span class="color-{{ (loop.index0 % 5) + 1 }}">{{ tag }}</span>
+                    {% endfor %}
+                {% elif model.tags and model.tags is string %}
+                    {# Handle case where tags might be a comma-separated string #}
+                    {% for tag in model.tags.split(',') %}
+                         <span class="color-{{ (loop.index0 % 5) + 1 }}">{{ tag.strip() }}</span>
+                    {% endfor %}
+                {% endif %}
+                 <span>日期: {{ model.created_at }}</span>
+                 <span>价格: {{ model.price }}</span>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="action-button like-button">点赞</button>
+            <button class="action-button follow-button">关注</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+    let scene, camera, renderer, controls, model;
+    const viewer = document.getElementById('model-viewer');
+    const loadingDiv = document.getElementById('loading');
+
+    function init() {
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+        // Initial camera position (will be adjusted later)
+        camera.position.set(0, 1, 5);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        viewer.appendChild(renderer.domElement);
+
+        // Controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        // controls.target.set(0, 0.5, 0); // Target will be updated later
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight2.position.set(-5, -5, -7.5);
+        scene.add(directionalLight2);
+
+        // Load Model
+        const loader = new THREE.OBJLoader();
+        const modelPath = "{{ url_for('static', filename='models/' + model.model_file) }}";
+        loader.load(
+            modelPath,
+            function (object) {
+                model = object;
+                // Apply a default material if needed
+                object.traverse(function (child) {
+                    if (child instanceof THREE.Mesh && !child.material) {
+                        child.material = new THREE.MeshStandardMaterial({ 
+                            color: 0xaaaaaa, 
+                            metalness: 0.5, 
+                            roughness: 0.5 
+                        });
+                    }
+                });
+
+                // --- Adjust Camera based on Model Size ---
+                const box = new THREE.Box3().setFromObject(object);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // Center model geometry at the origin
+                object.position.sub(center);
+                
+                // Calculate distance to fit the model based on FOV
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / 1.5 / Math.tan(fov / 2)); // Adjust divisor (1.5) for zoom
+                cameraZ *= 1.2; // Add a little extra distance
+
+                // Set camera position slightly above and back
+                camera.position.set(center.x, center.y + size.y / 3 , center.z + cameraZ);
+
+                // Update controls target to the model's center
+                controls.target.copy(center);
+                controls.update(); 
+                // --- End Camera Adjustment ---
+
+                scene.add(object);
+                loadingDiv.style.display = 'none';
+            },
+            function (xhr) {
+                if (xhr.lengthComputable) {
+                    const percentComplete = xhr.loaded / xhr.total * 100;
+                    loadingDiv.textContent = '加载模型中... ' + Math.round(percentComplete, 2) + '%';
+                }
+            },
+            function (error) {
+                console.error('模型加载错误:', error);
+                loadingDiv.textContent = '模型加载失败';
+                loadingDiv.style.color = 'red';
+            }
+        );
+
+        animate();
+        window.addEventListener('resize', onWindowResize, false);
+        document.querySelector('.like-button').addEventListener('click', () => alert('点赞成功!'));
+        document.querySelector('.follow-button').addEventListener('click', () => alert('关注成功!'));
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+        camera.aspect = viewer.clientWidth / viewer.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    }
+
+    init();
+
+</script>
+{% endblock %} 

@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block title %}邮箱验证 - 梦境建模系统{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>邮箱验证</h1>
+            <p>请验证您的邮箱地址</p>
+        </div>
+
+        <!-- 验证状态 -->
+        <div class="verification-status">
+            <div class="status-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="status-content">
+                <h3>验证邮件已发送</h3>
+                <p>我们已向 <strong>{{ current_user.email }}</strong> 发送了一封验证邮件。</p>
+                <p>请查收邮件并点击验证链接完成验证。</p>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <button type="button" class="btn-primary btn-block" onclick="resendVerificationEmail()">
+                <i class="fas fa-paper-plane"></i>
+                重新发送验证邮件
+            </button>
+            <button type="button" class="btn-secondary btn-block" onclick="changeEmail()">
+                <i class="fas fa-edit"></i>
+                修改邮箱地址
+            </button>
+        </div>
+
+        <!-- 帮助提示 -->
+        <div class="help-section">
+            <h3>没有收到邮件？</h3>
+            <div class="help-items">
+                <div class="help-item">
+                    <i class="fas fa-inbox"></i>
+                    <p>请检查您的收件箱和垃圾邮件文件夹</p>
+                </div>
+                <div class="help-item">
+                    <i class="fas fa-clock"></i>
+                    <p>邮件可能需要几分钟才能送达</p>
+                </div>
+                <div class="help-item">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>如果超过5分钟仍未收到，请尝试重新发送</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 修改邮箱模态框 -->
+        <div id="change-email-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>修改邮箱地址</h3>
+                    <button type="button" class="close-modal" onclick="closeModal('change-email-modal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="change-email-form" onsubmit="handleEmailChange(event)">
+                        <div class="form-group">
+                            <label for="new_email">新邮箱地址</label>
+                            <input type="email" id="new_email" name="new_email" required
+                                   placeholder="请输入新的邮箱地址">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">当前密码</label>
+                            <div class="password-input">
+                                <input type="password" id="password" name="password" required
+                                       placeholder="请输入当前密码">
+                                <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary btn-block">
+                            确认修改
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/**
+ * 重新发送验证邮件
+ */
+function resendVerificationEmail() {
+    const button = document.querySelector('.action-buttons .btn-primary');
+    const originalText = button.innerHTML;
+    
+    // 显示加载状态
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+    
+    fetch('/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('验证邮件已重新发送', 'success');
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('发送失败，请重试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+/**
+ * 打开修改邮箱模态框
+ */
+function changeEmail() {
+    document.getElementById('change-email-modal').style.display = 'block';
+}
+
+/**
+ * 关闭模态框
+ * @param {string} modalId - 模态框ID
+ */
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+/**
+ * 切换密码显示/隐藏
+ * @param {string} inputId - 密码输入框的ID
+ */
+function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleButton = passwordInput.parentElement.querySelector('.toggle-password i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleButton.classList.remove('fa-eye');
+        toggleButton.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleButton.classList.remove('fa-eye-slash');
+        toggleButton.classList.add('fa-eye');
+    }
+}
+
+/**
+ * 处理邮箱修改
+ * @param {Event} event - 表单提交事件
+ */
+function handleEmailChange(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // 显示加载状态
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+    
+    const formData = new FormData(form);
+    fetch('/auth/change-email', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('邮箱修改成功，请查收新的验证邮件', 'success');
+            closeModal('change-email-modal');
+            // 更新显示的邮箱地址
+            document.querySelector('.status-content strong').textContent = formData.get('new_email');
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('修改失败，请重试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    });
+}
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* 验证状态样式 */
+.verification-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    margin: 2rem 0;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-content h3 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+}
+
+.status-content p {
+    margin: 0 0 0.5rem;
+    color: var(--text-secondary);
+}
+
+.status-content strong {
+    color: var(--primary);
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.action-buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* 帮助部分样式 */
+.help-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.help-section h3 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.help-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.help-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.help-item i {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
+.help-item p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--surface-color);
+    margin: 10% auto;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.close-modal:hover {
+    color: var(--text-primary);
+}
+
+/* 加载动画 */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .verification-status {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .help-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %} 

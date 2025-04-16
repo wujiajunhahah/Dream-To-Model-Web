@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamEcho | 梦境 3D 模型</title>
+  <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    window.THREE = THREE;
+  </script>
+  <style>
+    :root {
+      --main-bg: #0b1423;
+      --highlight: #00d6ff;
+      --accent: #1a2b45;
+      --text: #ffffffcc;
+      --radius: 20px;
+      --shadow: 0 8px 32px 0 rgba(0, 214, 255, 0.1);
+      --card-bg: rgba(26, 43, 69, 0.4);
+      --badge-bg: rgba(0, 214, 255, 0.1);
+      --btn-gradient: linear-gradient(135deg, #00d6ff 0%, #0b1423 100%);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px rgba(0, 214, 255, 0.2); }
+      50% { box-shadow: 0 0 20px rgba(0, 214, 255, 0.4); }
+      100% { box-shadow: 0 0 5px rgba(0, 214, 255, 0.2); }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--main-bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at top right, rgba(0, 214, 255, 0.1), transparent 70%),
+                  radial-gradient(circle at bottom left, rgba(0, 214, 255, 0.05), transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--highlight);
+      margin: 2rem 0;
+      letter-spacing: -0.5px;
+      animation: float 6s ease-in-out infinite;
+      text-shadow: 0 0 20px rgba(0, 214, 255, 0.3);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    #viewer {
+      width: 100%;
+      height: 60vh;
+      background: var(--accent);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      animation: glow 4s infinite;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 214, 255, 0.1);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 214, 255, 0.2);
+    }
+
+    .keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+
+    .badge {
+      background: var(--badge-bg);
+      color: var(--highlight);
+      padding: 0.8rem 1.5rem;
+      border-radius: calc(var(--radius) / 2);
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 214, 255, 0.2);
+      cursor: pointer;
+    }
+
+    .badge:hover {
+      background: rgba(0, 214, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 214, 255, 0.2);
+    }
+
+    .btn {
+      background: var(--btn-gradient);
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: calc(var(--radius) / 2);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transform: translateX(-100%);
+      transition: 0.5s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 214, 255, 0.3);
+    }
+
+    .btn:hover::before {
+      transform: translateX(100%);
+    }
+
+    .description {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      color: var(--text);
+      margin: 1rem 0;
+    }
+
+    .analysis {
+      position: relative;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-left: 4px solid var(--highlight);
+      background: rgba(0, 214, 255, 0.05);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 20, 35, 0.9);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .loading-content {
+      text-align: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--highlight);
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    .loading-text {
+      color: var(--highlight);
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .loading-progress {
+      color: var(--highlight);
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .logo {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      width: 80px;
+      height: 80px;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0, 214, 255, 0.3));
+    }
+
+    .creator-card {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      background: rgba(0, 214, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1rem;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border: 1px solid rgba(0, 214, 255, 0.2);
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .creator-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 214, 255, 0.2);
+    }
+
+    .creator-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--highlight);
+    }
+
+    .creator-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .creator-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .creator-name {
+      color: var(--highlight);
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .creator-title {
+      color: var(--text);
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .interaction-buttons {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      display: flex;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    .interaction-btn {
+      background: rgba(0, 214, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 214, 255, 0.2);
+      border-radius: var(--radius);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--highlight);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .interaction-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(0, 214, 255, 0.2);
+      box-shadow: 0 5px 15px rgba(0, 214, 255, 0.2);
+    }
+
+    .viewer-stats {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(0, 214, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgba(0, 214, 255, 0.2);
+      z-index: 10;
+    }
+
+    .eye-icon {
+      width: 24px;
+      height: 24px;
+      stroke: var(--highlight);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .stats-number {
+      color: var(--highlight);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .interaction-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--highlight);
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+    }
+
+    .btn-with-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stats-count {
+      color: var(--highlight);
+      font-weight: 600;
+    }
+
+    .follow-btn {
+      background: var(--highlight);
+      color: var(--main-bg);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: calc(var(--radius) / 2);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .follow-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 214, 255, 0.3);
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: rgba(0, 214, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(0, 214, 255, 0.2);
+      color: var(--highlight);
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast-icon {
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .logo {
+        width: 60px;
+        height: 60px;
+        top: 1rem;
+        left: 1rem;
+      }
+
+      .creator-card {
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        transform: none;
+        bottom: 5rem;
+      }
+
+      .interaction-buttons {
+        left: 1rem;
+        right: 1rem;
+        transform: none;
+        bottom: 1rem;
+        justify-content: center;
+      }
+
+      .viewer-stats {
+        top: 1rem;
+        right: 1rem;
+        bottom: auto;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin: 1rem 0;
+      }
+
+      .container {
+        padding: 0 1rem;
+      }
+
+      #viewer {
+        height: 50vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">正在加载梦境...</div>
+      <div class="loading-progress">0%</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <a href="/" class="logo">
+    <img src="dreamecho_logo.png" alt="DreamEcho Logo">
+  </a>
+
+  <h1>梦境：双层大巴事故</h1>
+  <div class="container">
+    <div id="viewer">
+      <div class="viewer-stats">
+        <svg class="eye-icon" viewBox="0 0 24 24">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <span class="stats-number">1,234</span>
+      </div>
+
+      <div class="creator-card">
+        <div class="creator-avatar">
+          <img src="IMG_1141.jpeg" alt="吴嘉俊的头像">
+        </div>
+        <div class="creator-info">
+          <div class="creator-name">吴嘉俊</div>
+          <div class="creator-title">学生</div>
+        </div>
+        <button class="follow-btn" onclick="showToast('✨ 关注成功')">
+          <span>关注</span>
+        </button>
+      </div>
+
+      <div class="interaction-buttons">
+        <div class="interaction-btn" onclick="showToast('❤️ 点赞成功')">
+          <span>点赞</span>
+          <span class="stats-count">2.3k</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="keywords">
+        <span class="badge">双层大巴</span>
+        <span class="badge">湿地公园</span>
+        <span class="badge">母亲</span>
+        <span class="badge">撞树</span>
+        <span class="badge">安全锤</span>
+        <span class="badge">逃生</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>梦境描述</strong>
+      <p class="description">一辆由母亲驾驶的双层大巴在湿地公园撞树，乘客慌张地用安全锤破窗逃生。</p>
+    </div>
+
+    <div class="card">
+      <strong>梦境解析</strong>
+      <div class="analysis">
+        这个梦境可能反映了梦者在现实生活中感到失控或缺乏安全感。双层大巴象征家庭或集体环境，母亲开车可能代表家庭中的主导力量或依赖关系。撞到树可能暗示生活中的障碍或冲突。安全锤破窗象征梦者试图寻找出路或解决问题的方式，而父亲的无反应可能代表家庭中某种支持或保护的缺失。
+      </div>
+    </div>
+
+    <div class="card" style="text-align: center">
+      <button class="btn" onclick="window.open('https://yourapp.link/download')">进入 App</button>
+    </div>
+  </div>
+
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+    document.getElementById('viewer').appendChild(renderer.domElement);
+
+    // 创建 OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // 添加阻尼效果，使控制更平滑
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 1;
+    controls.maxDistance = 10;
+    controls.maxPolarAngle = Math.PI / 1.5; // 限制垂直旋转角度
+    
+    // 双击重置视角
+    renderer.domElement.addEventListener('dblclick', () => {
+      camera.position.set(0, 1.5, 5);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+
+    // 添加测试用立方体
+    const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const testCube = new THREE.Mesh(testGeometry, testMaterial);
+    scene.add(testCube);
+
+    // 添加灯光
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(2, 2, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // 添加环境光和半球光以改善光照
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
+
+    // 设置加载管理器
+    const loadingManager = new THREE.LoadingManager();
+    const loading = document.getElementById('loading');
+    const progressElement = document.querySelector('.loading-progress');
+    
+    // 使用缓存加载器
+    THREE.Cache.enabled = true;
+    
+    loadingManager.onStart = function(url, itemsLoaded, itemsTotal) {
+      loading.style.display = 'flex';
+      document.body.style.cursor = 'wait';
+    };
+    
+    loadingManager.onProgress = function(url, loaded, total) {
+      const progress = (loaded / total * 100).toFixed(0);
+      if (progressElement) {
+        progressElement.textContent = `${progress}%`;
+      }
+    };
+    
+    loadingManager.onLoad = function() {
+      loading.style.display = 'none';
+      document.body.style.cursor = 'default';
+    };
+    
+    loadingManager.onError = function(url) {
+      loading.style.display = 'none';
+      document.body.style.cursor = 'default';
+      console.error('加载失败:', url);
+    };
+
+    // 优化渲染器设置
+    renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // 优化材质设置
+    const material = new THREE.MeshStandardMaterial({ 
+      color: 0x00ccff,
+      metalness: 0.4,
+      roughness: 0.3,
+      envMapIntensity: 1.0,
+      flatShading: true // 使用平面着色提高性能
+    });
+
+    // 创建环境贴图
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+
+    // 创建OBJ加载器
+    const objLoader = new OBJLoader(loadingManager);
+    console.log('开始加载模型...');
+    
+    // 优化模型加载
+    fetch('bus.obj')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        console.log('文件存在，开始加载模型');
+        
+        // 添加响应缓存
+        const modelCache = localStorage.getItem('busModelCache');
+        if (modelCache) {
+          console.log('使用缓存的模型数据');
+          const object = objLoader.parse(modelCache);
+          setupModel(object);
+          return;
+        }
+
+        objLoader.load('bus.obj', 
+          function (object) {
+            console.log('模型加载成功！');
+            // 缓存模型数据
+            try {
+              localStorage.setItem('busModelCache', JSON.stringify(object.toJSON()));
+            } catch (e) {
+              console.warn('模型缓存失败:', e);
+            }
+            
+            setupModel(object);
+          },
+          function (xhr) {
+            const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+            if (progressElement) {
+              progressElement.textContent = `${percent}%`;
+            }
+            console.log(percent + '% 已加载');
+          },
+          function (error) {
+            console.error('加载错误：', error);
+            alert('❌ 模型加载失败：' + error.message);
+          }
+        );
+      })
+      .catch(error => {
+        console.error('文件检查失败：', error);
+        alert('❌ 无法找到模型文件，请确保"bus.obj"文件在正确的位置');
+      });
+
+    // 模型设置函数
+    function setupModel(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2 / maxDim;
+      object.scale.multiplyScalar(scale);
+      
+      object.position.sub(center.multiplyScalar(scale));
+      
+      object.traverse(function(child) {
+        if (child instanceof THREE.Mesh) {
+          child.material = material;
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // 优化几何体
+          if (child.geometry) {
+            child.geometry.computeVertexNormals();
+            child.geometry.computeBoundingSphere();
+            child.geometry.computeBoundingBox();
+          }
+        }
+      });
+      
+      scene.remove(testCube);
+      scene.add(object);
+
+      // 优化相机位置
+      const distance = maxDim * 2;
+      camera.position.set(distance, distance/2, distance);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    // 优化动画循环
+    let frameId;
+    function animate() {
+      frameId = requestAnimationFrame(animate);
+      
+      // 只在需要时更新控制器
+      if (controls.enabled && controls.update) {
+        controls.update();
+      }
+      
+      renderer.render(scene, camera);
+    }
+
+    // 优化窗口调整
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      
+      resizeTimeout = setTimeout(() => {
+        camera.aspect = window.innerWidth / (window.innerHeight * 0.6);
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+      }, 250);
+    });
+
+    animate();
+  </script>
+</body>
+</html>
+

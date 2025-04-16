@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}404 - 页面未找到{% endblock %}
+
+{% block extra_head %}
+<style>
+.error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-dark);
+    position: relative;
+    overflow: hidden;
+    padding: var(--spacing-xl) 0;
+}
+
+/* 背景动画效果 */
+.error-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(43, 26, 94, 0.2) 0%, rgba(15, 22, 36, 0.8) 100%);
+    z-index: 1;
+}
+
+.error-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 600px;
+    padding: 0 var(--spacing-md);
+}
+
+.error-code {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 120px;
+    font-weight: 700;
+    margin: 0;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    letter-spacing: 4px;
+    animation: glitch 1s infinite;
+    position: relative;
+    text-shadow: 0 0 30px rgba(255, 111, 145, 0.3);
+}
+
+.error-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    color: var(--text-primary);
+    margin: var(--spacing-md) 0;
+    font-weight: 500;
+}
+
+.error-message {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-button {
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.primary-button {
+    background: var(--primary-gradient);
+    color: var(--text-primary);
+}
+
+.secondary-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.primary-button:hover {
+    background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 漂浮元素动画 */
+.floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.floating-element {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: var(--primary-gradient);
+    border-radius: 50%;
+    opacity: 0.1;
+    animation: float 20s infinite linear;
+}
+
+.floating-element:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+.floating-element:nth-child(2) { top: 20%; right: 20%; animation-delay: 2s; }
+.floating-element:nth-child(3) { bottom: 30%; left: 30%; animation-delay: 4s; }
+.floating-element:nth-child(4) { bottom: 10%; right: 10%; animation-delay: 6s; }
+
+@keyframes float {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    33% {
+        transform: translate(30px, -50px) rotate(120deg) scale(1.2);
+    }
+    66% {
+        transform: translate(-30px, 50px) rotate(240deg) scale(0.8);
+    }
+    100% {
+        transform: translate(0, 0) rotate(360deg) scale(1);
+    }
+}
+
+@keyframes glitch {
+    0% {
+        text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff,
+                     0.025em 0.04em 0 #fffc00;
+    }
+    15% {
+        text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff,
+                     0.025em 0.04em 0 #fffc00;
+    }
+    16% {
+        text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.035em 0 #fc00ff,
+                     -0.05em -0.05em 0 #fffc00;
+    }
+    49% {
+        text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.035em 0 #fc00ff,
+                     -0.05em -0.05em 0 #fffc00;
+    }
+    50% {
+        text-shadow: 0.05em 0.035em 0 #00fffc, 0.03em 0 0 #fc00ff,
+                     0 -0.04em 0 #fffc00;
+    }
+    99% {
+        text-shadow: 0.05em 0.035em 0 #00fffc, 0.03em 0 0 #fc00ff,
+                     0 -0.04em 0 #fffc00;
+    }
+    100% {
+        text-shadow: -0.05em 0 0 #00fffc, -0.025em -0.04em 0 #fc00ff,
+                     -0.04em -0.025em 0 #fffc00;
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 80px;
+    }
+    
+    .error-title {
+        font-size: 20px;
+    }
+    
+    .error-message {
+        font-size: 16px;
+    }
+    
+    .error-button {
+        padding: var(--spacing-sm) var(--spacing-lg);
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+    
+    <div class="error-content">
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">迷失在梦境中了</h2>
+        <p class="error-message">看起来您想要访问的页面已经消失在梦境的迷雾中。不用担心，让我们一起回到现实世界。</p>
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="error-button primary-button">
+                <i class="fas fa-home"></i>
+                返回首页
+            </a>
+            <a href="{{ url_for('create_dream_page') }}" class="error-button secondary-button">
+                <i class="fas fa-plus"></i>
+                创建新梦境
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加入场动画
+    const errorContent = document.querySelector('.error-content');
+    errorContent.style.opacity = '0';
+    errorContent.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+        errorContent.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        errorContent.style.opacity = '1';
+        errorContent.style.transform = 'translateY(0)';
+    }, 100);
+
+    // 动态创建更多漂浮元素
+    const floatingElements = document.querySelector('.floating-elements');
+    for (let i = 0; i < 6; i++) {
+        const element = document.createElement('div');
+        element.className = 'floating-element';
+        element.style.top = `${Math.random() * 100}%`;
+        element.style.left = `${Math.random() * 100}%`;
+        element.style.animationDelay = `${Math.random() * 10}s`;
+        element.style.width = `${20 + Math.random() * 40}px`;
+        element.style.height = element.style.width;
+        floatingElements.appendChild(element);
+    }
+});
+</script>
+{% endblock %} 
