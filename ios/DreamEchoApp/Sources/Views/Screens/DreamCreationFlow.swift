@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DreamCreationFlow: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var coordinator: NavigationCoordinator
     @StateObject private var viewModel = DreamCreationViewModel()
     @State private var showResetAlert = false
 
@@ -61,6 +62,7 @@ struct DreamCreationFlow: View {
             if viewModel.currentStep == .progress, !viewModel.isSubmitting {
                 Button("完成") {
                     viewModel.finish()
+                    coordinator.switchTo(.library)
                 }
             }
         }
@@ -76,7 +78,7 @@ struct DreamCreationFlow: View {
         case .review:
             DreamReviewStep(viewModel: viewModel)
         case .progress:
-            DreamProgressStep(viewModel: viewModel, appState: appState)
+            DreamProgressStep(viewModel: viewModel, appState: appState, coordinator: coordinator)
         }
     }
 }
@@ -175,7 +177,9 @@ final class DreamCreationViewModel: ObservableObject {
         progress = 0
         statusMessage = "正在提交梦境"
         isSubmitting = true
-
+#if canImport(UIKit)
+        HapticsManager.shared.impact()
+#endif
         progressTask?.cancel()
         progressTask = Task {
             do {
@@ -234,6 +238,13 @@ final class DreamCreationViewModel: ObservableObject {
             let finalDream = try await dreamService.refreshDream(id: dream.id)
             progress = finalDream.status == .completed ? 1 : progress
             statusMessage = finalDream.status.progressMessage
+#if canImport(UIKit)
+            if finalDream.status == .completed {
+                HapticsManager.shared.notify(.success)
+            } else if finalDream.status == .failed {
+                HapticsManager.shared.notify(.error)
+            }
+#endif
             isSubmitting = false
             await appState?.refreshDreams()
         } catch {
@@ -246,6 +257,9 @@ final class DreamCreationViewModel: ObservableObject {
         resetProgress()
         statusMessage = "生成失败"
         errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+#if canImport(UIKit)
+        HapticsManager.shared.notify(.error)
+#endif
         isShowingError = true
     }
 }
@@ -379,6 +393,7 @@ private struct DreamReviewStep: View {
 private struct DreamProgressStep: View {
     @ObservedObject var viewModel: DreamCreationViewModel
     var appState: AppState
+    var coordinator: NavigationCoordinator
 
     var body: some View {
         VStack(spacing: 28) {
@@ -404,6 +419,7 @@ private struct DreamProgressStep: View {
                 PrimaryButton(title: "查看梦境库", systemImage: "square.grid.2x2") {
                     Task { await appState.refreshDreams() }
                     viewModel.finish()
+                    coordinator.switchTo(.library)
                 }
             }
         }
@@ -465,7 +481,7 @@ private struct TagInputField: View {
             }
 
             if !tags.isEmpty {
-                FlowLayout(alignment: .leading, spacing: 8) {
+                FlowLayout(alignment: .leading, spacing: 8, minWidth: 80) {
                     ForEach(tags, id: \.self) { tag in
                         HStack(spacing: 6) {
                             Text(tag)
@@ -553,25 +569,9 @@ private struct DreamSummaryCard: View {
     }
 }
 
-private struct FlowLayout<Content: View>: View {
-    let alignment: HorizontalAlignment
-    let spacing: CGFloat
-    let content: Content
-
-    init(alignment: HorizontalAlignment, spacing: CGFloat, @ViewBuilder content: () -> Content) {
-        self.alignment = alignment
-        self.spacing = spacing
-        self.content = content()
-    }
-
-    var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80), spacing: spacing)], alignment: alignment, spacing: spacing) {
-            content
-        }
-    }
-}
 
 #Preview {
     DreamCreationFlow()
         .environmentObject(AppState())
+        .environmentObject(NavigationCoordinator())
 }

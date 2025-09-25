@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var coordinator: NavigationCoordinator
 
     private var hasPendingDreams: Bool { !appState.pendingDreams.isEmpty }
     private var hasCompletedDreams: Bool { !appState.completedDreams.isEmpty }
@@ -9,9 +10,9 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 44) {
-                HeroSection()
+                HeroSection { coordinator.switchTo(.creation) } exploreAction: { coordinator.switchTo(.library) }
                 DreamStatusStrip(pendingDreams: appState.pendingDreams, completedDreams: appState.completedDreams)
-                PendingDreamCarousel(dreams: appState.pendingDreams)
+                PendingDreamCarousel(dreams: hasPendingDreams ? appState.pendingDreams : Dream.sampleInProgress)
                 HighlightsGrid()
                 ExplorePreview(dreams: hasCompletedDreams ? appState.completedDreams : Dream.sampleCompleted)
             }
@@ -35,6 +36,9 @@ struct HomeView: View {
 }
 
 private struct HeroSection: View {
+    let createAction: () -> Void
+    let exploreAction: () -> Void
+
     var body: some View {
         VStack(spacing: 32) {
             Capsule()
@@ -69,11 +73,11 @@ private struct HeroSection: View {
 
             HStack(spacing: 16) {
                 PrimaryButton(title: "开启梦境工坊", systemImage: "sparkles") {
-                    // Tab interaction handled by parent
+                    createAction()
                 }
 
                 SecondaryButton(title: "查看梦境库", systemImage: "square.grid.2x2") {
-                    // Tab interaction handled by parent
+                    exploreAction()
                 }
             }
             .frame(maxWidth: 640)
@@ -311,4 +315,5 @@ private struct GlassCardPlaceholder: View {
 #Preview {
     HomeView()
         .environmentObject(AppState())
+        .environmentObject(NavigationCoordinator())
 }

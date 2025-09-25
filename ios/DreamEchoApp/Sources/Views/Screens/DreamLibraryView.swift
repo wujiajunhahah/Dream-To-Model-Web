@@ -334,23 +334,6 @@ private struct InfoRow: View {
     }
 }
 
-private struct FlowLayout<Content: View>: View {
-    let alignment: HorizontalAlignment
-    let spacing: CGFloat
-    let content: Content
-
-    init(alignment: HorizontalAlignment, spacing: CGFloat, @ViewBuilder content: () -> Content) {
-        self.alignment = alignment
-        self.spacing = spacing
-        self.content = content()
-    }
-
-    var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: spacing)], alignment: alignment, spacing: spacing) {
-            content
-        }
-    }
-}
 
 #Preview {
     DreamLibraryView()
