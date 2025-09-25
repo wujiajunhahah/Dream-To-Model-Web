@@ -29,6 +29,7 @@ This guide explains how to version-control the new iOS code, push it to GitHub, 
 2. Target iOS 16 as the minimum deployment target.
 3. Delete the default SwiftUI files and drag all sources from `ios/DreamEchoApp/Sources` into the project (select “Copy items if needed”).
 4. Add `DreamEchoApp/Package.swift` to the workspace if you prefer the Swift Package structure.
+5. Update `Resources/Info.plist` with your deployment `API_BASE_URL` (and optional `API_EVENTS_URL`) values.
 5. Import USDZ assets (e.g., `DreamStatue.usdz`) into your asset catalog.
 
 ## 3. Configure Xcode Cloud

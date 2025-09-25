@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 @MainActor
 final class AppState: ObservableObject {
@@ -9,34 +8,64 @@ final class AppState: ObservableObject {
     @Published var completedDreams: [Dream] = []
     @Published var selectedDream: Dream?
     @Published var isShowingARViewer = false
+    @Published var lastError: String?
 
-    let apiClient = APIClient()
+    private let authService: AuthService
+    private let dreamService: DreamService
+
+    init(
+        authService: AuthService = AuthService(),
+        dreamService: DreamService = DreamService()
+    ) {
+        self.authService = authService
+        self.dreamService = dreamService
+    }
 
     func bootstrap() async {
-        await refreshSession()
-        await loadDreams()
-    }
-
-    func refreshSession() async {
-        do {
-            let session = try await apiClient.fetchCurrentSession()
-            self.session = session
-            self.isAuthenticated = true
-        } catch {
-            self.session = nil
-            self.isAuthenticated = false
+        await authService.bootstrap()
+        session = authService.session
+        isAuthenticated = session != nil
+        if isAuthenticated {
+            await refreshDreams()
         }
     }
 
-    func loadDreams() async {
+    func login(email: String, password: String) async {
+        do {
+            try await authService.login(email: email, password: password)
+            session = authService.session
+            isAuthenticated = true
+            await refreshDreams()
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    func register(username: String, email: String, password: String) async {
+        do {
+            try await authService.register(username: username, email: email, password: password)
+            session = authService.session
+            isAuthenticated = true
+            await refreshDreams()
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    func logout() async {
+        await authService.logout()
+        session = nil
+        isAuthenticated = false
+        pendingDreams = []
+        completedDreams = []
+    }
+
+    func refreshDreams() async {
         guard isAuthenticated else { return }
-        do {
-            let dreams = try await apiClient.fetchDreams()
-            pendingDreams = dreams.filter { $0.status.isPending }
-            completedDreams = dreams.filter { $0.status == .completed }
-        } catch {
-            // TODO: Surface error through toast/logging system
-        }
+        await dreamService.loadDreams()
+        pendingDreams = dreamService.pendingDreams
+        completedDreams = dreamService.completedDreams
+        lastError = dreamService.lastError
     }
 }
 

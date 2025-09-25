@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DreamCreationFlow: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DreamCreationViewModel()
 
     var body: some View {
@@ -22,6 +23,10 @@ struct DreamCreationFlow: View {
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         }
+        .toast(message: viewModel.errorMessage, isPresented: $viewModel.isShowingError)
+        .task {
+            viewModel.bindAppState(appState)
+        }
     }
 }
 
@@ -32,6 +37,7 @@ enum DreamCreationStep: Hashable {
     case progress
 }
 
+@MainActor
 final class DreamCreationViewModel: ObservableObject {
     @Published var navigationPath: [DreamCreationStep] = []
     @Published var title = ""
@@ -42,6 +48,21 @@ final class DreamCreationViewModel: ObservableObject {
     @Published var tags: [String] = []
     @Published var isSubmitting = false
     @Published var progress: Double = 0
+    @Published var statusMessage: String = "准备生成"
+    @Published var errorMessage: String?
+    @Published var isShowingError = false
+
+    private let dreamService = DreamService()
+    private weak var appState: AppState?
+    private var progressTask: Task<Void, Never>?
+
+    deinit {
+        progressTask?.cancel()
+    }
+
+    func bindAppState(_ appState: AppState) {
+        self.appState = appState
+    }
 
     func goToStyling() {
         navigationPath.append(.styling)
@@ -51,21 +72,58 @@ final class DreamCreationViewModel: ObservableObject {
         navigationPath.append(.review)
     }
 
-    func submit() async {
+    func submit() {
         guard !title.isEmpty, !description.isEmpty else { return }
         navigationPath.append(.progress)
-        await simulateProgress()
-    }
-
-    private func simulateProgress() async {
+        progress = 0
+        statusMessage = "正在提交梦境"
         isSubmitting = true
-        for index in 0...10 {
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            await MainActor.run {
-                progress = Double(index) / 10
+
+        progressTask?.cancel()
+        progressTask = Task {
+            do {
+                let request = DreamCreationRequest(
+                    title: title,
+                    description: description,
+                    style: selectedStyle.rawValue,
+                    mood: selectedMood.rawValue,
+                    blockchain: selectedBlockchain,
+                    tags: tags
+                )
+
+                let dream = try await dreamService.submitDream(request: request)
+                statusMessage = "模型生成中"
+                await appState?.refreshDreams()
+                try await listenForProgress(of: dream)
+            } catch {
+                await handle(error: error)
             }
         }
+    }
+
+    private func listenForProgress(of dream: Dream) async throws {
+        do {
+            for try await event in dreamService.watchProgress(for: dream) {
+                progress = event.progress
+                statusMessage = event.message ?? event.status.localizedDescription
+            }
+            let finalDream = try await dreamService.refreshDream(id: dream.id)
+            progress = finalDream.status == .completed ? 1 : progress
+            statusMessage = finalDream.status.progressMessage
+            isSubmitting = false
+            await appState?.refreshDreams()
+        } catch {
+            try Task.checkCancellation()
+            throw error
+        }
+    }
+
+    private func handle(error: Error) async {
         isSubmitting = false
+        progress = 0
+        statusMessage = "生成失败"
+        errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        isShowingError = true
     }
 }
 
@@ -169,8 +227,9 @@ private struct DreamReviewStep: View {
             DreamSummaryCard(viewModel: viewModel)
 
             PrimaryButton(title: "提交生成", systemImage: "sparkles") {
-                Task { await viewModel.submit() }
+                viewModel.submit()
             }
+            .disabled(viewModel.isSubmitting)
         }
         .padding()
         .background(GradientBackground())
@@ -189,7 +248,7 @@ private struct DreamProgressStep: View {
             ParticleBackground()
                 .frame(height: 160)
                 .mask(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            Text("我们正在使用DeepSeek和Tripo API将梦境转化为3D模型。")
+            Text(viewModel.statusMessage)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -256,6 +315,20 @@ private struct DreamSummaryCard: View {
     }
 }
 
+extension DreamStatus {
+    var progressMessage: String {
+        switch self {
+        case .pending, .processing:
+            return "模型生成进行中"
+        case .completed:
+            return "生成完成"
+        case .failed:
+            return "生成失败"
+        }
+    }
+}
+
 #Preview {
     DreamCreationFlow()
+        .environmentObject(AppState())
 }

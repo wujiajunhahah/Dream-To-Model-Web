@@ -3,6 +3,7 @@ import SwiftUI
 struct DreamLibraryView: View {
     @EnvironmentObject private var appState: AppState
     @State private var searchText = ""
+    @State private var showErrorToast = false
 
     var filteredDreams: [Dream] {
         guard !searchText.isEmpty else { return appState.completedDreams }
@@ -35,6 +36,11 @@ struct DreamLibraryView: View {
                 }
             }
         }
+        .task { await appState.refreshDreams() }
+        .onChange(of: appState.lastError) { _, newValue in
+            if let newValue { showErrorToast = true }
+        }
+        .toast(message: appState.lastError, isPresented: $showErrorToast)
     }
 }
 

@@ -16,3 +16,8 @@ This directory contains a SwiftUI scaffolding for the DreamEcho native app. Brin
 3. Wire the `APIClient` to the real backend endpoints and authentication (JWT recommended).
 4. Implement persistent storage (Core Data or Realm) for offline dream access.
 5. Connect push notifications for model-generation completion alerts.
+
+## Configuration
+- Update `Resources/Info.plist` with production `API_BASE_URL` and optional `API_EVENTS_URL` for SSE/WebSocket endpoints.
+- Alternatively, provide `API_BASE_URL` via environment variable for Xcode Cloud or CI pipelines.
+- Tokens are persisted securely using the system Keychain; reset by calling `AuthService.logout()` or deleting the app.
