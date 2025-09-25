@@ -82,3 +82,47 @@ struct User: Codable {
     let username: String
     let email: String
 }
+
+extension DreamStatus {
+    var localizedDescription: String {
+        switch self {
+        case .pending: return "待处理"
+        case .processing: return "生成中"
+        case .completed: return "已完成"
+        case .failed: return "失败"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .pending: return "clock"
+        case .processing: return "hourglass"
+        case .completed: return "checkmark.seal"
+        case .failed: return "exclamationmark.triangle"
+        }
+    }
+
+    var progressMessage: String {
+        switch self {
+        case .pending, .processing:
+            return "模型生成进行中"
+        case .completed:
+            return "生成完成"
+        case .failed:
+            return "生成失败"
+        }
+    }
+}
+
+extension Dream {
+    static let sampleCompleted: [Dream] = [
+        Dream(title: "云海中的花园", description: "在云端漂浮的玻璃温室，充满星光植物。", status: .completed, tags: ["梦境", "自然"], blockchain: .ethereum, price: 0.25),
+        Dream(title: "霓虹骑士", description: "蒸汽朋克骑士穿梭于霓虹迷宫。", status: .completed, tags: ["科幻", "角色"], blockchain: .polygon, price: 0.18),
+        Dream(title: "水墨龙魂", description: "盘旋的水墨中国龙，在雾气中若隐若现。", status: .completed, tags: ["东方"], blockchain: .bsc, price: 0.32)
+    ]
+
+    static let sampleInProgress: [Dream] = [
+        Dream(title: "星际列车", description: "穿梭银河的透明列车，乘客是记忆的碎片。", status: .processing, tags: ["旅行", "科幻"]),
+        Dream(title: "林间光影", description: "清晨薄雾中的鹿与萤火共舞。", status: .pending, tags: ["自然", "治愈"]),
+    ]
+}
