@@ -1,171 +1,282 @@
 {% extends "base.html" %}
 
-{% block title %}DreamEcho - 梦境建模{% endblock %}
-
-{% block extra_head %}
-<style>
-    #particleCanvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: linear-gradient(45deg, #000428, #004e92);
-    }
-
-    .hero-section {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: white;
-        position: relative;
-    }
-
-    .hero-content {
-        max-width: 800px;
-        padding: 2rem;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 15px;
-        backdrop-filter: blur(10px);
-    }
-
-    .hero-title {
-        font-size: 3.5rem;
-        margin-bottom: 1.5rem;
-        font-weight: bold;
-        background: linear-gradient(45deg, #00ff9d, #00d4ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .hero-subtitle {
-        font-size: 1.5rem;
-        margin-bottom: 2rem;
-        color: #e0e0e0;
-    }
-
-    .cta-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 2rem;
-    }
-
-    .cta-button {
-        padding: 1rem 2rem;
-        border: none;
-        border-radius: 30px;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        color: white;
-    }
-
-    .primary-cta {
-        background: linear-gradient(45deg, #00ff9d, #00d4ff);
-    }
-
-    .secondary-cta {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .cta-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .features-section {
-        padding: 5rem 0;
-        background: rgba(0, 0, 0, 0.7);
-    }
-
-    .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        padding: 0 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .feature-card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 2rem;
-        border-radius: 15px;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: white;
-        transition: transform 0.3s ease;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-5px);
-    }
-
-    .feature-icon {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        color: #00ff9d;
-    }
-
-    .feature-title {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-        color: #00ff9d;
-    }
-
-    .feature-description {
-        color: #e0e0e0;
-        line-height: 1.6;
-    }
-</style>
-{% endblock %}
+{% block title %}DreamEcho - 将梦境转化为3D艺术{% endblock %}
 
 {% block content %}
-<canvas id="particleCanvas"></canvas>
-
-<section class="hero-section">
-    <div class="hero-content">
-        <h1 class="hero-title">DreamEcho</h1>
-        <p class="hero-subtitle">将你的梦境转化为独特的3D艺术品</p>
-        <div class="cta-buttons">
-            <a href="{{ url_for('create_dream_page') }}" class="cta-button primary-cta">开始创建</a>
-            <a href="{{ url_for('model_library') }}" class="cta-button secondary-cta">探索梦境</a>
+<!-- Hero Section -->
+<section class="relative container mx-auto px-4 pt-20 pb-32">
+    <div class="max-w-6xl mx-auto">
+        <!-- Announcement Badge -->
+        <div class="flex justify-center mb-8 animate-slide-down">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass border border-primary/20">
+                <div class="w-2 h-2 bg-primary rounded-full mr-3 animate-pulse"></div>
+                <span class="text-sm font-medium text-foreground/80">
+                    DreamEcho - 梦境工艺设计工作室
+                </span>
+            </div>
+        </div>
+        
+        <!-- Main Heading -->
+        <div class="text-center mb-12 animate-slide-up">
+            <h1 class="text-6xl md:text-8xl font-light mb-6 tracking-tight">
+                <span class="text-foreground/80">将你的</span>
+                <br>
+                <span class="text-gradient-dreamecho font-medium">梦境转化</span>
+                <br>
+                <span class="text-foreground/80">为独特的</span>
+                <span class="text-gradient-dreamecho font-medium">3D艺术</span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+                通过先进的AI技术，我们将你的梦境转化为独特的3D艺术作品。
+                <span class="text-foreground">每个梦境都成为独一无二的NFT，永久存储在区块链上。</span>
+            </p>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-6 items-center justify-center mb-16">
+                <a href="{{ url_for('create_dream') }}" 
+                   class="px-8 py-4 text-lg font-semibold text-white button-gradient-dreamecho rounded-full hover:scale-105 transform transition-all duration-300 shadow-lg hover:shadow-primary/25">
+                    开始创建梦境
+                </a>
+                <a href="{{ url_for('model_library') }}" 
+                   class="px-8 py-4 text-lg font-semibold text-foreground border border-border rounded-full glass-hover hover:scale-105 transform transition-all duration-300 flex items-center gap-2">
+                    探索梦境库
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Hero Image/Demo -->
+        <div class="relative mx-auto max-w-5xl animate-fade-in">
+            <div class="glass rounded-2xl overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-500 hover:scale-[1.02] transform">
+                <div class="aspect-video bg-gradient-to-br from-primary/20 to-dreamecho-accent/20 flex items-center justify-center">
+                    <div class="text-center space-y-4">
+                        <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center animate-glow">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-gradient-dreamecho">3D梦境展示</h3>
+                        <p class="text-muted-foreground">即将展示您的梦境3D模型</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="features-section">
-    <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon">🧠</div>
-            <h3 class="feature-title">AI梦境分析</h3>
-            <p class="feature-description">
-                采用先进的AI技术，深入分析你的梦境描述，捕捉关键元素和情感特征。
+<!-- Features Section -->
+<section class="container mx-auto px-4 py-24">
+    <!-- Section Header -->
+    <div class="max-w-3xl mb-20 animate-slide-up">
+        <h2 class="text-5xl md:text-6xl font-light mb-6 tracking-tight">
+            无限创意
+            <br>
+            <span class="text-gradient-dreamecho font-medium">数字艺术平台</span>
+        </h2>
+        <p class="text-xl md:text-2xl text-muted-foreground">
+            创建您的专属数字艺术收藏，将每个梦境转化为独特的杰作。
+        </p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1: AI Generation -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">AI智能生成</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                使用先进的AI算法，将您的梦境描述转化为精美的3D模型，每个细节都充满创意。
             </p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3 class="feature-title">3D模型生成</h3>
-            <p class="feature-description">
-                将分析结果转化为独特的3D模型，精确还原梦境场景和物体细节。
+
+        <!-- Feature 2: Blockchain NFT -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">区块链NFT</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                每个梦境3D模型都将铸造为独一无二的NFT，确保您的数字艺术品的唯一性和所有权。
             </p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">💎</div>
-            <h3 class="feature-title">NFT铸造</h3>
-            <p class="feature-description">
-                将你的梦境艺术品铸造为NFT，在区块链上永久保存，并可进行交易。
+
+        <!-- Feature 3: High Quality -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">高品质3D</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                采用业界领先的3D建模技术，生成高精度、高质量的3D模型，支持多种格式导出。
+            </p>
+        </div>
+
+        <!-- Feature 4: Dream Archive -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">梦境档案</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                建立您的个人梦境档案库，记录每一个珍贵的梦境，创建独特的数字艺术收藏。
+            </p>
+        </div>
+
+        <!-- Feature 5: Community -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">创作社区</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                加入充满活力的创作者社区，分享您的梦境艺术，发现其他创作者的精彩作品。
+            </p>
+        </div>
+
+        <!-- Feature 6: Easy Export -->
+        <div class="glass rounded-2xl p-8 hover:scale-105 transform transition-all duration-500 hover:border-primary/40 group">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-primary to-dreamecho-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground mb-4">便捷导出</h3>
+            <p class="text-muted-foreground leading-relaxed">
+                支持多种3D格式导出，包括GLB、OBJ等，轻松集成到您的项目或3D打印。
             </p>
         </div>
     </div>
 </section>
 
-<script src="{{ url_for('static', filename='js/particle.js') }}"></script>
+<!-- Stats Section -->
+<section class="container mx-auto px-4 py-24">
+    <div class="glass rounded-3xl p-12 text-center">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="space-y-4">
+                <div class="text-5xl font-bold text-gradient-dreamecho">1000+</div>
+                <div class="text-xl text-muted-foreground">梦境已转化</div>
+            </div>
+            <div class="space-y-4">
+                <div class="text-5xl font-bold text-gradient-dreamecho">500+</div>
+                <div class="text-xl text-muted-foreground">活跃创作者</div>
+            </div>
+            <div class="space-y-4">
+                <div class="text-5xl font-bold text-gradient-dreamecho">99%</div>
+                <div class="text-xl text-muted-foreground">用户满意度</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="container mx-auto px-4 py-24">
+    <div class="relative">
+        <!-- Background Gradient -->
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-dreamecho-accent/20 rounded-3xl blur-3xl"></div>
+        
+        <!-- Content -->
+        <div class="relative glass rounded-3xl p-12 md:p-16 text-center border border-primary/20">
+            <h2 class="text-4xl md:text-5xl font-light mb-6 text-foreground">
+                准备好将您的梦境
+                <span class="text-gradient-dreamecho font-medium">变为现实</span>了吗？
+            </h2>
+            <p class="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+                让我们一起将您的梦境转化为独特的3D艺术，创建您的数字收藏。
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 items-center justify-center">
+                <a href="{{ url_for('create_dream') }}" 
+                   class="px-8 py-4 text-lg font-semibold text-white button-gradient-dreamecho rounded-full hover:scale-105 transform transition-all duration-300 shadow-lg hover:shadow-primary/25">
+                    立即开始创建
+                    <svg class="w-5 h-5 ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+                <a href="{{ url_for('about') }}" 
+                   class="px-8 py-4 text-lg font-semibold text-foreground border border-border rounded-full glass-hover hover:scale-105 transform transition-all duration-300">
+                    了解更多
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Intersection Observer for animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe all animated elements
+document.addEventListener('DOMContentLoaded', () => {
+    const animatedElements = document.querySelectorAll('.animate-slide-up, .animate-fade-in');
+    animatedElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+});
+
+// Counter animation for stats
+function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 100;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current) + (target >= 1000 ? '+' : '%');
+    }, 20);
+}
+
+// Initialize counter animations when stats section is visible
+const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const counters = entry.target.querySelectorAll('.text-5xl');
+            counters.forEach((counter, index) => {
+                const targets = [1000, 500, 99];
+                animateCounter(counter, targets[index]);
+            });
+            statsObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const statsSection = document.querySelector('.glass.rounded-3xl.p-12');
+    if (statsSection) {
+        statsObserver.observe(statsSection);
+    }
+});
+</script>
 {% endblock %} 

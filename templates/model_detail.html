@@ -1,306 +1,396 @@
 {% extends "base.html" %}
 
-{% block title %}梦境 3D 展示 - {{ model.title }}{% endblock %}
-
-{% block extra_head %}
-<style>
-    /* Ensure body has padding for fixed navbar */
-    body {
-        padding-top: 80px; /* Adjust based on actual navbar height */
-        /* Remove overflow: hidden; if it exists */
-    }
-
-    #container {
-        display: flex;
-        /* Remove fixed height: 100vh; */
-        /* Let it take natural height or set min-height */
-        min-height: calc(100vh - 80px - 4rem); /* Example: viewport height minus navbar and footer padding */
-        width: 100%;
-        background-color: #121212; /* Ensure container background */
-        color: #e0e0e0;
-    }
-    #model-viewer {
-        flex-grow: 1;
-        position: relative;
-        background-color: #1a1a1a;
-        min-height: 500px; /* Give viewer a minimum height */
-    }
-    #info-panel {
-        width: 350px;
-        padding: 25px;
-        background-color: #1e1e1e;
-        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-        display: flex;
-        flex-direction: column;
-        border-left: 1px solid #333;
-        /* Removed overflow-y: auto; let the page scroll */
-    }
-    .logo img {
-        width: 150px;
-        margin-bottom: 20px;
-    }
-    .creator-info {
-        display: flex;
-        align-items: center;
-        margin-bottom: 25px;
-        border-bottom: 1px solid #333;
-        padding-bottom: 20px;
-    }
-    .creator-info img {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        margin-right: 15px;
-        border: 2px solid #444;
-    }
-    .creator-name {
-        font-weight: bold;
-        color: #ffffff;
-    }
-    .creator-handle {
-        font-size: 0.9em;
-        color: #aaa;
-    }
-    .dream-details h2 {
-        font-size: 1.3em;
-        margin-bottom: 15px;
-        color: #00bcd4; /* Accent color */
-        border-bottom: 1px solid #444;
-        padding-bottom: 8px;
-    }
-    .dream-details p {
-        font-size: 0.95em;
-        line-height: 1.6;
-        color: #ccc;
-        margin-bottom: 20px;
-    }
-    .keywords span {
-        display: inline-block;
-        /* background-color: #333; */ /* 移除默认背景 */
-        color: #e0e0e0; /* 统一文字颜色 */
-        padding: 6px 12px; /* 调整 padding */
-        border-radius: 15px;
-        font-size: 0.85em; /* 稍大一点 */
-        margin-right: 8px;
-        margin-bottom: 8px;
-        font-weight: 500;
-        transition: transform 0.2s ease;
-    }
-    .keywords span:hover {
-        transform: translateY(-2px);
-    }
-    /* 定义几种颜色 */
-    .keywords span.color-1 { background-color: #007bff; }
-    .keywords span.color-2 { background-color: #6f42c1; }
-    .keywords span.color-3 { background-color: #28a745; }
-    .keywords span.color-4 { background-color: #dc3545; }
-    .keywords span.color-5 { background-color: #fd7e14; }
-    .actions {
-        margin-top: auto; /* Push actions to the bottom */
-        padding-top: 20px;
-        border-top: 1px solid #333;
-        display: flex;
-        gap: 15px;
-    }
-    .action-button {
-        flex-grow: 1;
-        padding: 12px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        text-align: center;
-        transition: background-color 0.3s ease;
-    }
-    .like-button {
-        background-color: #444;
-        color: #fff;
-    }
-    .like-button:hover {
-        background-color: #555;
-    }
-    .follow-button {
-        background-color: #00bcd4;
-        color: #121212;
-    }
-    .follow-button:hover {
-        background-color: #00acc1;
-    }
-    #loading {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-size: 1.2em;
-        background: rgba(0,0,0,0.7);
-        padding: 15px 25px;
-        border-radius: 8px;
-        z-index: 10;
-    }
-</style>
-{% endblock %}
+{% block title %}{{ model.title }} - DreamEcho{% endblock %}
 
 {% block content %}
-<div id="container">
-    <div id="model-viewer">
-        <div id="loading">加载模型中...</div>
-        {# Canvas will be added here by Three.js #}
+<div class="model-detail-container">
+    <div class="model-viewer-section">
+        <model-viewer 
+            src="{{ url_for('static', filename=model.model_path) }}"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            camera-controls
+            shadow-intensity="1"
+            auto-rotate
+            camera-orbit="45deg 55deg 2.5m"
+            exposure="1"
+            style="width: 100%; height: 500px;">
+        </model-viewer>
     </div>
-    <div id="info-panel">
-        <div class="logo">
-            {# Assume logo is in static/images #}
-            <img src="{{ url_for('static', filename='images/dreamecho_logo.png') }}" alt="DreamEcho Logo">
+
+    <div class="model-info-section">
+        <h1 class="model-title">{{ model.title }}</h1>
+        <div class="model-meta">
+            <span class="creator">创作者: {{ model.creator }}</span>
+            <span class="created-at">创建时间: {{ model.created_at }}</span>
         </div>
-        <div class="creator-info">
-            <img src="{{ model.creator_avatar }}" alt="Creator Avatar">
-            <div>
-                <div class="creator-name">{{ model.creator_name }}</div>
-            </div>
+        
+        <div class="model-price">
+            <span class="price-label">价格:</span>
+            <span class="price-value">{{ model.price }} ETH</span>
         </div>
-        <div class="dream-details">
-            <h2>{{ model.title }}</h2>
+
+        <div class="model-tags">
+            {% for tag in model.tags %}
+            <span class="tag">{{ tag }}</span>
+            {% endfor %}
+        </div>
+
+        <div class="model-description">
+            <h3>描述</h3>
             <p>{{ model.description }}</p>
-            <div class="keywords">
-                {# Check if tags is a list or string before iterating #}
-                {% if model.tags and model.tags is iterable and model.tags is not string %}
-                    {% for tag in model.tags %}
-                        <span class="color-{{ (loop.index0 % 5) + 1 }}">{{ tag }}</span>
-                    {% endfor %}
-                {% elif model.tags and model.tags is string %}
-                    {# Handle case where tags might be a comma-separated string #}
-                    {% for tag in model.tags.split(',') %}
-                         <span class="color-{{ (loop.index0 % 5) + 1 }}">{{ tag.strip() }}</span>
-                    {% endfor %}
-                {% endif %}
-                 <span>日期: {{ model.created_at }}</span>
-                 <span>价格: {{ model.price }}</span>
-            </div>
         </div>
-        <div class="actions">
-            <button class="action-button like-button">点赞</button>
-            <button class="action-button follow-button">关注</button>
+
+        <div class="model-technical-info">
+            <h3>技术信息</h3>
+            <ul>
+                <li>格式: {{ model.format }}</li>
+                <li>多边形数量: {{ model.polygons }}</li>
+                <li>文件大小: {{ model.file_size }}</li>
+            </ul>
+        </div>
+
+        <div class="model-actions">
+            <button class="btn primary-btn">购买模型</button>
+            <button class="btn secondary-btn">添加到收藏</button>
+            <button class="btn ar-btn" onclick="enterAR()">AR 预览</button>
         </div>
     </div>
 </div>
+
+<style>
+.model-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.model-viewer-section {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.model-info-section {
+    padding: 1rem;
+}
+
+.model-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.model-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: #aaa;
+}
+
+.model-price {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.price-value {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.model-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+.tag {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.model-description {
+    margin: 1rem 0;
+    color: #ddd;
+}
+
+.model-technical-info {
+    margin: 1rem 0;
+    color: #ddd;
+}
+
+.model-technical-info ul {
+    list-style: none;
+    padding: 0;
+}
+
+.model-technical-info li {
+    margin: 0.5rem 0;
+    color: #aaa;
+}
+
+.model-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.primary-btn {
+    background: linear-gradient(45deg, #00ff88, #00a6ff);
+    color: #fff;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ar-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    .model-detail-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .model-viewer-section {
+        height: 300px;
+    }
+
+    .model-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+function enterAR() {
+    const modelViewer = document.querySelector('model-viewer');
+    modelViewer.activateAR();
+}
+</script>
 {% endblock %}
 
-{% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>
-    let scene, camera, renderer, controls, model;
-    const viewer = document.getElementById('model-viewer');
-    const loadingDiv = document.getElementById('loading');
+{% block extra_css %}
+<style>
+.model-detail-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    color: white;
+}
 
-    function init() {
-        // Scene
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a1a);
+.model-preview {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+}
 
-        // Camera
-        camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
-        // Initial camera position (will be adjusted later)
-        camera.position.set(0, 1, 5);
+.preview-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+}
 
-        // Renderer
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        viewer.appendChild(renderer.domElement);
+.model-info {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
+}
 
-        // Controls
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        // controls.target.set(0, 0.5, 0); // Target will be updated later
+.model-header h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #fff;
+}
 
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
+.model-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        directionalLight.position.set(5, 10, 7.5);
-        scene.add(directionalLight);
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight2.position.set(-5, -5, -7.5);
-        scene.add(directionalLight2);
+.tag {
+    background: rgba(0, 255, 157, 0.1);
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
 
-        // Load Model
-        const loader = new THREE.OBJLoader();
-        const modelPath = "{{ url_for('static', filename='models/' + model.model_file) }}";
-        loader.load(
-            modelPath,
-            function (object) {
-                model = object;
-                // Apply a default material if needed
-                object.traverse(function (child) {
-                    if (child instanceof THREE.Mesh && !child.material) {
-                        child.material = new THREE.MeshStandardMaterial({ 
-                            color: 0xaaaaaa, 
-                            metalness: 0.5, 
-                            roughness: 0.5 
-                        });
-                    }
-                });
+.model-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-                // --- Adjust Camera based on Model Size ---
-                const box = new THREE.Box3().setFromObject(object);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                
-                // Center model geometry at the origin
-                object.position.sub(center);
-                
-                // Calculate distance to fit the model based on FOV
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const fov = camera.fov * (Math.PI / 180);
-                let cameraZ = Math.abs(maxDim / 1.5 / Math.tan(fov / 2)); // Adjust divisor (1.5) for zoom
-                cameraZ *= 1.2; // Add a little extra distance
+.creator-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-                // Set camera position slightly above and back
-                camera.position.set(center.x, center.y + size.y / 3 , center.z + cameraZ);
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
 
-                // Update controls target to the model's center
-                controls.target.copy(center);
-                controls.update(); 
-                // --- End Camera Adjustment ---
+.price-info {
+    text-align: right;
+}
 
-                scene.add(object);
-                loadingDiv.style.display = 'none';
-            },
-            function (xhr) {
-                if (xhr.lengthComputable) {
-                    const percentComplete = xhr.loaded / xhr.total * 100;
-                    loadingDiv.textContent = '加载模型中... ' + Math.round(percentComplete, 2) + '%';
-                }
-            },
-            function (error) {
-                console.error('模型加载错误:', error);
-                loadingDiv.textContent = '模型加载失败';
-                loadingDiv.style.color = 'red';
-            }
-        );
+.price-label {
+    display: block;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
 
-        animate();
-        window.addEventListener('resize', onWindowResize, false);
-        document.querySelector('.like-button').addEventListener('click', () => alert('点赞成功!'));
-        document.querySelector('.follow-button').addEventListener('click', () => alert('关注成功!'));
+.price-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ff9d;
+}
+
+.model-description {
+    margin-bottom: 2rem;
+}
+
+.model-description h3 {
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.model-description p {
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.model-actions {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.model-actions button {
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-purchase {
+    background: linear-gradient(45deg, #00ff9d, #00d4ff);
+    color: #000;
+    font-weight: bold;
+}
+
+.btn-ar {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-download {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.model-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.model-details h3 {
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.detail-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.detail-label {
+    display: block;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.3rem;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 768px) {
+    .model-detail-container {
+        grid-template-columns: 1fr;
     }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+    
+    .model-actions {
+        grid-template-columns: 1fr;
     }
+}
+</style>
+{% endblock %}
 
-    function onWindowResize() {
-        camera.aspect = viewer.clientWidth / viewer.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-    }
-
-    init();
-
-</script>
+{% block extra_js %}
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
 {% endblock %} 

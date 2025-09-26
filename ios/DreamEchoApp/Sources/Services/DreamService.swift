@@ -2,45 +2,45 @@ import Foundation
 
 @MainActor
 final class DreamService: ObservableObject {
-    private let apiClient: APIClient
-
-    @Published private(set) var pendingDreams: [Dream] = []
-    @Published private(set) var completedDreams: [Dream] = []
+    @Published private(set) var pending: [Dream] = []
+    @Published private(set) var completed: [Dream] = []
     @Published private(set) var lastError: String?
+
+    private let apiClient: APIClient
 
     init(apiClient: APIClient = APIClient()) {
         self.apiClient = apiClient
     }
 
-    func loadDreams() async {
+    func refresh() async {
         do {
             let dreams = try await apiClient.fetchDreams()
-            pendingDreams = dreams.filter { $0.status.isPending }
-            completedDreams = dreams.filter { $0.status == .completed }
+            pending = dreams.filter { $0.isPending }
+            completed = dreams.filter { !$0.isPending }
             lastError = nil
         } catch {
             lastError = error.localizedDescription
         }
     }
 
-    func submitDream(request: DreamCreationRequest) async throws -> Dream {
+    func submit(request: DreamCreationRequest) async throws -> Dream {
         let dream = try await apiClient.submitDream(request)
-        pendingDreams.append(dream)
+        pending.append(dream)
         return dream
     }
 
     func watchProgress(for dream: Dream) -> AsyncThrowingStream<DreamProgressEvent, Error> {
-        apiClient.streamDreamProgress(id: dream.id)
+        apiClient.streamEvents(for: dream.id)
     }
 
-    func refreshDream(id: UUID) async throws -> Dream {
-        let updated = try await apiClient.pollDreamStatus(id: id)
-        pendingDreams.removeAll { $0.id == id }
-        if updated.status.isPending {
-            pendingDreams.append(updated)
+    func reloadDream(with id: UUID) async throws -> Dream {
+        let updated = try await apiClient.pollDream(id: id)
+        pending.removeAll { $0.id == id }
+        completed.removeAll { $0.id == id }
+        if updated.isPending {
+            pending.append(updated)
         } else {
-            completedDreams.removeAll { $0.id == id }
-            completedDreams.append(updated)
+            completed.append(updated)
         }
         return updated
     }

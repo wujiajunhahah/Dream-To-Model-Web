@@ -7,20 +7,10 @@ let package = Package(
         .iOS(.v16)
     ],
     products: [
-        .library(
-            name: "DreamEchoApp",
-            targets: ["DreamEchoApp"]
-        )
+        .library(name: "DreamEchoApp", targets: ["DreamEchoApp"])
     ],
     targets: [
-        .target(
-            name: "DreamEchoApp",
-            path: "Sources"
-        ),
-        .testTarget(
-            name: "DreamEchoAppTests",
-            dependencies: ["DreamEchoApp"],
-            path: "Tests"
-        )
+        .target(name: "DreamEchoApp", path: "Sources"),
+        .testTarget(name: "DreamEchoAppTests", dependencies: ["DreamEchoApp"], path: "Tests")
     ]
 )

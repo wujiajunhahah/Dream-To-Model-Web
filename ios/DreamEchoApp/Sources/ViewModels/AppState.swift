@@ -2,21 +2,18 @@ import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published var session: UserSession?
-    @Published var isAuthenticated = false
-    @Published var pendingDreams: [Dream] = []
-    @Published var completedDreams: [Dream] = []
+    @Published private(set) var session: UserSession?
+    @Published private(set) var isAuthenticated = false
+    @Published private(set) var pendingDreams: [Dream] = []
+    @Published private(set) var completedDreams: [Dream] = []
     @Published var selectedDream: Dream?
-    @Published var isShowingARViewer = false
+    @Published var showARViewer = false
     @Published var lastError: String?
 
     private let authService: AuthService
     private let dreamService: DreamService
 
-    init(
-        authService: AuthService = AuthService(),
-        dreamService: DreamService = DreamService()
-    ) {
+    init(authService: AuthService = AuthService(), dreamService: DreamService = DreamService()) {
         self.authService = authService
         self.dreamService = dreamService
     }
@@ -25,9 +22,7 @@ final class AppState: ObservableObject {
         await authService.bootstrap()
         session = authService.session
         isAuthenticated = session != nil
-        if isAuthenticated {
-            await refreshDreams()
-        }
+        await refreshDreams()
     }
 
     func login(email: String, password: String) async {
@@ -61,15 +56,9 @@ final class AppState: ObservableObject {
     }
 
     func refreshDreams() async {
-        guard isAuthenticated else { return }
-        await dreamService.loadDreams()
-        pendingDreams = dreamService.pendingDreams
-        completedDreams = dreamService.completedDreams
+        await dreamService.refresh()
+        pendingDreams = dreamService.pending.isEmpty ? Dream.pendingSamples : dreamService.pending
+        completedDreams = dreamService.completed.isEmpty ? Dream.showcase : dreamService.completed
         lastError = dreamService.lastError
     }
-}
-
-struct UserSession: Codable {
-    let user: User
-    let token: String
 }

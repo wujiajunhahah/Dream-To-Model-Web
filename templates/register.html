@@ -1,143 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}注册 - 梦境建模系统{% endblock %}
+{% block title %}注册 - DreamEcho{% endblock %}
 
 {% block content %}
 <div class="auth-container">
-    <div class="auth-box">
-        <h2>注册</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <div class="auth-card">
+        <h2 class="auth-title">注册账号</h2>
         <form method="POST" action="{{ url_for('register') }}" class="auth-form">
             <div class="form-group">
                 <label for="username">用户名</label>
-                <input type="text" id="username" name="username" required class="form-control">
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
             </div>
             <div class="form-group">
-                <label for="email">邮箱</label>
-                <input type="email" id="email" name="email" required class="form-control">
+                <label for="email">电子邮箱</label>
+                <input type="email" id="email" name="email" class="form-control" required>
             </div>
             <div class="form-group">
                 <label for="password">密码</label>
-                <input type="password" id="password" name="password" required class="form-control">
+                <input type="password" id="password" name="password" class="form-control" required>
             </div>
-            <button type="submit" class="submit-btn">注册</button>
+            <button type="submit" class="auth-submit">注册</button>
         </form>
-        <div class="auth-links">
-            <p>已有账号？ <a href="{{ url_for('login') }}">立即登录</a></p>
+        <div class="auth-footer">
+            <p>已有账号？<a href="{{ url_for('login') }}">登录</a></p>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_head %}
+{% block extra_css %}
 <style>
 .auth-container {
-    min-height: 100vh;
     display: flex;
-    align-items: center;
     justify-content: center;
-    background: linear-gradient(45deg, #0F1624 0%, #2A2F4A 100%);
-    padding: 20px;
+    align-items: center;
+    min-height: calc(100vh - 200px);
 }
 
-.auth-box {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    padding: 40px;
-    border-radius: 20px;
+.auth-card {
+    background: rgba(20, 20, 20, 0.8);
+    border-radius: 15px;
+    padding: 2.5rem;
     width: 100%;
-    max-width: 400px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    max-width: 450px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
-.auth-box h2 {
-    color: #fff;
+.auth-title {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 2rem;
     font-size: 2rem;
+    color: white;
+    background: linear-gradient(45deg, #00ff9d, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-form {
+    margin-bottom: 1.5rem;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
     display: block;
-    color: #fff;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #e0e0e0;
 }
 
 .form-control {
     width: 100%;
-    padding: 12px;
-    border: none;
+    padding: 0.8rem 1rem;
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: white;
     font-size: 1rem;
     transition: all 0.3s ease;
 }
 
 .form-control:focus {
     outline: none;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 2px var(--primary-color);
+    border-color: #00ff9d;
+    box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.2);
 }
 
-.submit-btn {
+.auth-submit {
     width: 100%;
-    padding: 12px;
+    padding: 0.8rem;
+    background: linear-gradient(45deg, #00ff9d, #00d4ff);
     border: none;
     border-radius: 8px;
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    color: #fff;
+    color: #000;
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
 }
 
-.submit-btn:hover {
+.auth-submit:hover {
     transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
 }
 
-.auth-links {
+.auth-footer {
     text-align: center;
-    margin-top: 20px;
+    color: #aaa;
 }
 
-.auth-links a {
-    color: var(--primary-color);
+.auth-footer a {
+    color: #00ff9d;
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
-.auth-links a:hover {
-    color: var(--secondary-color);
-}
-
-.alert {
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.alert-success {
-    background: rgba(40, 167, 69, 0.2);
-    color: #28a745;
-}
-
-.alert-error {
-    background: rgba(220, 53, 69, 0.2);
-    color: #dc3545;
+.auth-footer a:hover {
+    text-decoration: underline;
 }
 </style>
 {% endblock %} 

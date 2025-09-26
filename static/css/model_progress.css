@@ -1,0 +1,214 @@
+/* 模型生成进度样式 */
+.progress-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 600px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.progress-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.progress-stage {
+    padding: 5px 12px;
+    background: rgba(64, 126, 201, 0.1);
+    color: #407ec9;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.progress-stage.error {
+    background: rgba(239, 71, 67, 0.1);
+    color: #ef4743;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    flex-grow: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-right: 15px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #407ec9, #6aa8e7);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.progress-animated {
+    background: linear-gradient(90deg, #407ec9, #6aa8e7, #407ec9);
+    background-size: 200% 100%;
+    animation: progress-animation 2s linear infinite;
+}
+
+.progress-bar-fill.error {
+    background: linear-gradient(90deg, #ef4743, #ff7a77);
+}
+
+.progress-percentage {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    min-width: 50px;
+    text-align: right;
+}
+
+.progress-percentage.error {
+    color: #ef4743;
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.progress-time {
+    display: flex;
+    align-items: center;
+    color: #555;
+}
+
+.progress-time i {
+    margin-right: 8px;
+    color: #407ec9;
+}
+
+.remaining-time {
+    font-size: 0.9rem;
+}
+
+.progress-status {
+    color: #555;
+    font-size: 0.9rem;
+    max-width: 70%;
+}
+
+.progress-animation {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* 3D加载方块动画 */
+.loading-cube {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-30deg) rotateY(45deg);
+    animation: cube-rotate 8s infinite linear;
+}
+
+.loading-cube div {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    opacity: 0.8;
+    border: 2px solid rgba(64, 126, 201, 0.5);
+    border-radius: 5px;
+}
+
+/* 方块各个面 */
+.loading-cube div:nth-child(1) {
+    transform: translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.1);
+}
+
+.loading-cube div:nth-child(2) {
+    transform: rotateX(180deg) translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.2);
+}
+
+.loading-cube div:nth-child(3) {
+    transform: rotateY(90deg) translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.3);
+}
+
+.loading-cube div:nth-child(4) {
+    transform: rotateY(-90deg) translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.4);
+}
+
+.loading-cube div:nth-child(5) {
+    transform: rotateX(90deg) translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.5);
+}
+
+.loading-cube div:nth-child(6) {
+    transform: rotateX(-90deg) translateZ(30px);
+    background-color: rgba(64, 126, 201, 0.6);
+}
+
+/* 动画定义 */
+@keyframes progress-animation {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 200% 0%;
+    }
+}
+
+@keyframes cube-rotate {
+    0% {
+        transform: rotateX(-30deg) rotateY(0deg);
+    }
+    100% {
+        transform: rotateX(-30deg) rotateY(360deg);
+    }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .progress-container {
+        padding: 16px;
+        margin: 15px;
+    }
+    
+    .progress-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .progress-stage {
+        margin-top: 10px;
+    }
+    
+    .progress-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .progress-status {
+        margin-top: 10px;
+        max-width: 100%;
+    }
+} 

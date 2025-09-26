@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamEcho - 梦境转3D模型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 粒子背景 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* Logo水印 */
+        .logo-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.05;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .logo-watermark img {
+            width: 400px;
+            height: auto;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            padding-top: 100px;
+        }
+
+        /* 首页样式 */
+        .hero-section {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 特性展示 */
+        .features-section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        /* 创建梦境页面 */
+        .create-dream-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-title {
+            color: white;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .char-counter {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* 区块链选择 */
+        .blockchain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .blockchain-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .blockchain-option:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .blockchain-option.selected {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .blockchain-option img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 进度模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            color: white;
+            min-width: 400px;
+        }
+
+        .progress-container {
+            margin: 2rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* 模型库页面 */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .model-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .model-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .model-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .model-info {
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .model-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .model-description {
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .model-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 登录表单 */
+        .auth-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .auth-form {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-title {
+            color: white;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .auth-link a {
+            color: #ff6b6b;
+            text-decoration: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .form-container {
+                padding: 2rem;
+            }
+            
+            .blockchain-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 隐藏页面 */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles-js"></div>
+    
+    <!-- Logo水印 -->
+    <div class="logo-watermark">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iODAiIGZpbGw9InVybCgjZ3JhZGllbnQwKSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDAiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZmY2YjZiO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNlZTVhMjQ7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHN2Zz4K" alt="DreamEcho Logo">
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo" onclick="showPage('home')">DreamEcho</a>
+            <ul class="nav-links">
+                <li><a href="#" onclick="showPage('home')">首页</a></li>
+                <li><a href="#" onclick="showPage('create')">创建梦境</a></li>
+                <li><a href="#" onclick="showPage('library')">模型库</a></li>
+                <li><a href="#" onclick="showPage('login')">登录</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="main-content">
+        <!-- 首页 -->
+        <div id="home" class="page active">
+            <section class="hero-section">
+                <h1 class="hero-title">DreamEcho</h1>
+                <p class="hero-subtitle">将您的梦境转化为独特的3D艺术品</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn btn-primary" onclick="showPage('create')">开始创建</a>
+                    <a href="#" class="btn btn-secondary" onclick="showPage('library')">探索梦境</a>
+                </div>
+            </section>
+
+            <section class="features-section">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iMTUiIGZpbGw9InVybCgjZ3JhZGllbnQxKSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjY3ZWVhO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3NjRiYTI7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHN2Zz4K" alt="AI生成">
+                        <h3>AI智能生成</h3>
+                        <p>先进的AI技术将您的文字描述转化为精美的3D模型</p>
+                    </div>
+                    <div class="feature-card">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iMTUiIGZpbGw9InVybCgjZ3JhZGllbnQyKSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZmY2YjZiO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNlZTVhMjQ7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHN2Zz4K" alt="区块链">
+                        <h3>区块链NFT</h3>
+                        <p>支持多种区块链平台，将您的作品铸造为独特的NFT</p>
+                    </div>
+                    <div class="feature-card">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iMTUiIGZpbGw9InVybCgjZ3JhZGllbnQzKSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDMiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNGVjZGMzO3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0NGE5ZjQ7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHN2Zz4K" alt="3D模型">
+                        <h3>高质量3D</h3>
+                        <p>生成高质量的3D模型，支持多种格式导出和展示</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 创建梦境页面 -->
+        <div id="create" class="page">
+            <div class="create-dream-container">
+                <div class="form-container">
+                    <h2 class="form-title">创建您的梦境</h2>
+                    <form id="dreamForm">
+                        <div class="form-group">
+                            <label class="form-label">梦境标题</label>
+                            <input type="text" class="form-input" id="title" placeholder="给您的梦境起个名字..." maxlength="100" required>
+                            <div class="char-counter">
+                                <span id="titleCounter">0</span>/100
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">梦境描述</label>
+                            <textarea class="form-textarea" id="description" rows="6" placeholder="详细描述您的梦境..." maxlength="500" required></textarea>
+                            <div class="char-counter">
+                                <span id="descCounter">0</span>/500
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">AI标签</label>
+                            <input type="text" class="form-input" id="tags" placeholder="AI将自动生成相关标签...">
+                            <button type="button" class="btn btn-secondary" onclick="generateTags()" style="margin-top: 1rem;">生成AI标签</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">选择区块链</label>
+                            <div class="blockchain-grid">
+                                <div class="blockchain-option" onclick="selectBlockchain('ethereum')">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiMzQzNDM0QiLz4KPHBhdGggZD0iTTI1IDEwTDM1IDI1TDI1IDMwTDE1IDI1TDI1IDEwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTI1IDMyTDM1IDI3TDI1IDQwTDE1IDI3TDI1IDMyWiIgZmlsbD0id2hpdGUiLz4KPHN2Zz4K" alt="Ethereum">
+                                    <div>Ethereum</div>
+                                </div>
+                                <div class="blockchain-option" onclick="selectBlockchain('bsc')">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiNGM0JBMkYiLz4KPHBhdGggZD0iTTI1IDEwTDMwIDIwSDIwTDI1IDEwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEwIDI1TDIwIDIwVjMwTDEwIDI1WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTQwIDI1TDMwIDIwVjMwTDQwIDI1WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTI1IDQwTDIwIDMwSDMwTDI1IDQwWiIgZmlsbD0id2hpdGUiLz4KPHN2Zz4K" alt="BSC">
+                                    <div>BSC</div>
+                                </div>
+                                <div class="blockchain-option" onclick="selectBlockchain('polygon')">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiM4MjQ3RTUiLz4KPHBhdGggZD0iTTI1IDEwTDM1IDIwTDI1IDMwTDE1IDIwTDI1IDEwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTI1IDMyTDM1IDQyTDI1IDUyTDE1IDQyTDI1IDMyWiIgZmlsbD0id2hpdGUiLz4KPHN2Zz4K" alt="Polygon">
+                                    <div>Polygon</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="selectedBlockchain" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">价格 (ETH)</label>
+                            <input type="number" class="form-input" id="price" step="0.001" min="0" placeholder="0.1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">版税 (%)</label>
+                            <input type="number" class="form-input" id="royalty" step="0.1" min="0" max="10" placeholder="2.5" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">
+                            开始生成3D模型
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模型库页面 -->
+        <div id="library" class="page">
+            <section class="hero-section">
+                <h2 class="hero-title" style="font-size: 2.5rem;">模型库</h2>
+                <p class="hero-subtitle">探索其他用户创建的精美3D梦境</p>
+            </section>
+
+            <div class="model-grid">
+                <div class="model-card">
+                    <div class="model-image">
+                        <span>🏰 梦幻城堡</span>
+                    </div>
+                    <div class="model-info">
+                        <h3 class="model-title">漂浮的城堡</h3>
+                        <p class="model-description">一座漂浮在云端的神秘城堡，散发着魔法的光芒</p>
+                        <div class="model-meta">
+                            <span>0.5 ETH</span>
+                            <a href="#" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">查看详情</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card">
+                    <div class="model-image">
+                        <span>🌊 海底世界</span>
+                    </div>
+                    <div class="model-info">
+                        <h3 class="model-title">深海奇境</h3>
+                        <p class="model-description">神秘的海底世界，充满了发光的珊瑚和奇异生物</p>
+                        <div class="model-meta">
+                            <span>0.3 ETH</span>
+                            <a href="#" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">查看详情</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card">
+                    <div class="model-image">
+                        <span>🚀 太空站</span>
+                    </div>
+                    <div class="model-info">
+                        <h3 class="model-title">星际基地</h3>
+                        <p class="model-description">未来科技感十足的太空站，在星空中闪闪发光</p>
+                        <div class="model-meta">
+                            <span>0.8 ETH</span>
+                            <a href="#" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">查看详情</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登录页面 -->
+        <div id="login" class="page">
+            <div class="auth-container">
+                <div class="auth-form">
+                    <h2 class="auth-title">登录</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-input" id="username" placeholder="请输入用户名" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-input" id="password" placeholder="请输入密码" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">
+                            登录
+                        </button>
+                    </form>
+
+                    <div class="auth-link">
+                        <p style="color: white;">还没有账户？ <a href="#" onclick="showRegister()">立即注册</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进度模态框 -->
+    <div id="progressModal" class="modal">
+        <div class="modal-content">
+            <h3>正在生成您的3D模型...</h3>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">初始化中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面切换功能
+        function showPage(pageId) {
+            // 隐藏所有页面
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+            
+            // 显示指定页面
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // 字符计数器
+        function setupCharCounters() {
+            const titleInput = document.getElementById('title');
+            const descInput = document.getElementById('description');
+            const titleCounter = document.getElementById('titleCounter');
+            const descCounter = document.getElementById('descCounter');
+
+            titleInput.addEventListener('input', function() {
+                titleCounter.textContent = this.value.length;
+            });
+
+            descInput.addEventListener('input', function() {
+                descCounter.textContent = this.value.length;
+            });
+        }
+
+        // 区块链选择
+        function selectBlockchain(blockchain) {
+            // 移除所有选中状态
+            const options = document.querySelectorAll('.blockchain-option');
+            options.forEach(option => option.classList.remove('selected'));
+            
+            // 添加选中状态
+            event.target.closest('.blockchain-option').classList.add('selected');
+            
+            // 设置隐藏字段值
+            document.getElementById('selectedBlockchain').value = blockchain;
+        }
+
+        // AI标签生成
+        function generateTags() {
+            const description = document.getElementById('description').value;
+            if (!description.trim()) {
+                alert('请先输入梦境描述');
+                return;
+            }
+
+            // 模拟AI标签生成
+            const sampleTags = ['奇幻', '梦境', '3D艺术', '创意', '想象力', '超现实', '魔法', '未来'];
+            const randomTags = sampleTags.sort(() => 0.5 - Math.random()).slice(0, 4);
+            document.getElementById('tags').value = randomTags.join(', ');
+        }
+
+        // 表单提交处理
+        function setupForms() {
+            // 创建梦境表单
+            document.getElementById('dreamForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    tags: document.getElementById('tags').value,
+                    blockchain: document.getElementById('selectedBlockchain').value,
+                    price: document.getElementById('price').value,
+                    royalty: document.getElementById('royalty').value
+                };
+
+                if (!formData.blockchain) {
+                    alert('请选择区块链平台');
+                    return;
+                }
+
+                // 显示进度模态框
+                showProgressModal();
+                
+                // 模拟生成过程
+                simulateGeneration();
+            });
+
+            // 登录表单
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                // 模拟登录验证
+                if (username === '123' && password === '123') {
+                    alert('登录成功！');
+                    showPage('home');
+                } else {
+                    alert('用户名或密码错误');
+                }
+            });
+        }
+
+        // 显示进度模态框
+        function showProgressModal() {
+            document.getElementById('progressModal').style.display = 'block';
+        }
+
+        // 隐藏进度模态框
+        function hideProgressModal() {
+            document.getElementById('progressModal').style.display = 'none';
+        }
+
+        // 模拟生成过程
+        function simulateGeneration() {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            const steps = [
+                { progress: 10, text: '分析梦境描述...' },
+                { progress: 30, text: '生成3D结构...' },
+                { progress: 50, text: '添加材质和纹理...' },
+                { progress: 70, text: '优化模型细节...' },
+                { progress: 90, text: '准备NFT铸造...' },
+                { progress: 100, text: '生成完成！' }
+            ];
+
+            let currentStep = 0;
+            
+            const updateProgress = () => {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    progressText.textContent = step.text;
+                    currentStep++;
+                    
+                    setTimeout(updateProgress, 2000);
+                } else {
+                    setTimeout(() => {
+                        hideProgressModal();
+                        alert('3D模型生成成功！您可以在模型库中查看。');
+                        showPage('library');
+                    }, 1000);
+                }
+            };
+
+            updateProgress();
+        }
+
+        // 粒子动画
+        function initParticles() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('particles-js');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            container.appendChild(canvas);
+
+            const particles = [];
+            const particleCount = 50;
+
+            // 创建粒子
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: Math.random() * 3 + 1
+                });
+            }
+
+            // 动画循环
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                particles.forEach(particle => {
+                    // 更新位置
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+
+                    // 边界检测
+                    if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+                    if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+
+                    // 绘制粒子
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            // 窗口大小调整
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // 注册功能
+        function showRegister() {
+            alert('注册功能开发中...');
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCharCounters();
+            setupForms();
+            initParticles();
+        });
+
+        // API配置
+        const API_BASE_URL = 'http://localhost:5001';
+
+        // 实际API调用函数（可选）
+        async function callAPI(endpoint, data) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API调用失败:', error);
+                return null;
+            }
+        }
+    </script>
+</body>
+</html> 

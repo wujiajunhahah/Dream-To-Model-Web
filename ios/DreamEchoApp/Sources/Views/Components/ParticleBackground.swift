@@ -1,35 +1,26 @@
 import SwiftUI
 
 struct ParticleBackground: View {
-    @State private var time: CGFloat = 0
-
     var body: some View {
-        TimelineView(.animation) { timeline in
-            Canvas { context, size in
-                let elapsed = timeline.date.timeIntervalSinceReferenceDate
-                time = CGFloat(elapsed.truncatingRemainder(dividingBy: 120))
-
-                for index in 0..<120 {
+        TimelineView(.animation) { context in
+            Canvas { canvas, size in
+                let time = context.date.timeIntervalSinceReferenceDate
+                let particles = 120
+                for index in 0..<particles {
                     var position = CGPoint(
-                        x: CGFloat.random(in: 0...size.width),
-                        y: CGFloat.random(in: 0...size.height)
+                        x: size.width * CGFloat((Double(index) / Double(particles)) + 0.2 * sin(time + Double(index))),
+                        y: size.height * CGFloat((Double(index % 7) / 7.0))
                     )
+                    position.x = position.x.truncatingRemainder(dividingBy: size.width)
+                    position.y += CGFloat(sin(time + Double(index))) * 24
 
-                    let progress = CGFloat(index) / 120 + time * 0.005
-                    position.x = size.width * (progress.truncatingRemainder(dividingBy: 1))
-                    position.y += sin(progress * .pi * 2) * 40
-
-                    var particle = context.resolve(
-                        Image(systemName: "circle.fill")
-                    )
-
-                    context.opacity = 0.25
-                    context.addFilter(.blur(radius: 2))
-                    context.draw(particle, at: position, anchor: .center)
+                    var circle = canvas.resolve(Image(systemName: "circle.fill"))
+                    circle.shading = .color(.white.opacity(0.18))
+                    canvas.addFilter(.blur(radius: 2))
+                    canvas.draw(circle, at: position)
                 }
             }
         }
-        .blur(radius: 8)
         .allowsHitTesting(false)
     }
 }

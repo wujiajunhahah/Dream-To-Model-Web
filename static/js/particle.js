@@ -8,34 +8,31 @@ class Particle {
      * @param {Object} canvas - Canvas元素
      * @param {number} x - 初始X坐标
      * @param {number} y - 初始Y坐标
-     * @param {boolean} isMouseParticle - 是否是鼠标触发的粒子
      */
-    constructor(canvas, x, y, isMouseParticle = false) {
+    constructor(canvas, x, y) {
         this.canvas = canvas;
         this.x = x;
         this.y = y;
-        this.isMouseParticle = isMouseParticle;
-        this.size = isMouseParticle ? Math.random() * 3 + 2 : Math.random() * 2 + 1;
-        this.baseSize = this.size;
-        this.speedX = Math.random() * 3 - 1.5;
-        this.speedY = Math.random() * 3 - 1.5;
-        this.maxLife = isMouseParticle ? 50 : 150;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 2 - 1;
+        this.speedY = Math.random() * 2 - 1;
+        this.maxLife = Math.random() * 100 + 150;
         this.life = 0;
-        this.color = this.generateColor();
+        this.opacity = Math.random() * 0.5 + 0.5;
+        this.color = this.getRandomColor();
     }
 
     /**
      * 生成粒子颜色
      * @returns {string} 颜色值
      */
-    generateColor() {
+    getRandomColor() {
         const colors = [
-            [0, 255, 157],  // 青绿色
-            [0, 212, 255],  // 天蓝色
-            [157, 0, 255]   // 紫色
+            { r: 0, g: 255, b: 204 },  // 青色
+            { r: 138, g: 43, b: 226 }   // 紫色
         ];
         const color = colors[Math.floor(Math.random() * colors.length)];
-        return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+        return `rgba(${color.r}, ${color.g}, ${color.b}, ${this.opacity})`;
     }
 
     /**
@@ -48,18 +45,13 @@ class Particle {
 
         // 边界检查和反弹
         if (this.x <= 0 || this.x >= this.canvas.width) {
-            this.speedX *= -0.95; // 添加一些能量损失
-            this.x = Math.max(0, Math.min(this.x, this.canvas.width));
+            this.speedX *= -1;
         }
         if (this.y <= 0 || this.y >= this.canvas.height) {
-            this.speedY *= -0.95; // 添加一些能量损失
-            this.y = Math.max(0, Math.min(this.y, this.canvas.height));
+            this.speedY *= -1;
         }
 
-        // 鼠标粒子特殊效果
-        if (this.isMouseParticle) {
-            this.size = this.baseSize * (1 - this.life / this.maxLife);
-        }
+        this.opacity = Math.max(0, 1 - (this.life / this.maxLife));
     }
 
     /**
@@ -67,10 +59,9 @@ class Particle {
      * @param {CanvasRenderingContext2D} ctx - Canvas上下文
      */
     draw(ctx) {
-        const opacity = 1 - (this.life / this.maxLife);
-        ctx.fillStyle = this.color.replace('rgb', 'rgba').replace(')', `, ${opacity})`);
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color.replace(/[\d.]+\)$/,`${this.opacity})`);
         ctx.fill();
     }
 
@@ -90,22 +81,15 @@ class ParticleSystem {
     /**
      * 创建粒子系统
      */
-    constructor() {
-        this.canvas = document.getElementById('particleCanvas');
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
-        this.mouse = {
-            x: null,
-            y: null,
-            radius: 150
-        };
-        this.lastTime = 0;
-        this.fps = 60;
-        this.frameInterval = 1000 / this.fps;
-
+        this.maxParticles = 100;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.mouseRadius = 100;
         this.init();
-        this.animate();
-        this.setupEventListeners();
     }
 
     /**
@@ -114,29 +98,23 @@ class ParticleSystem {
     init() {
         this.resizeCanvas();
         this.createInitialParticles();
+        this.setupEventListeners();
+        this.animate();
     }
 
     /**
      * 调整画布尺寸
      */
     resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = window.innerWidth * dpr;
-        this.canvas.height = window.innerHeight * dpr;
-        this.canvas.style.width = `${window.innerWidth}px`;
-        this.canvas.style.height = `${window.innerHeight}px`;
-        this.ctx.scale(dpr, dpr);
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
 
     /**
      * 创建初始粒子
      */
     createInitialParticles() {
-        const numberOfParticles = Math.min(
-            100,
-            Math.floor((this.canvas.width * this.canvas.height) / 15000)
-        );
-        for (let i = 0; i < numberOfParticles; i++) {
+        for (let i = 0; i < this.maxParticles; i++) {
             const x = Math.random() * this.canvas.width;
             const y = Math.random() * this.canvas.height;
             this.particles.push(new Particle(this.canvas, x, y));
@@ -147,37 +125,17 @@ class ParticleSystem {
      * 设置事件监听器
      */
     setupEventListeners() {
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                this.resizeCanvas();
-                this.particles = [];
-                this.createInitialParticles();
-            }, 250);
-        });
+        window.addEventListener('resize', () => this.resizeCanvas());
         
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            this.mouse.x = (e.clientX - rect.left) * dpr;
-            this.mouse.y = (e.clientY - rect.top) * dpr;
-            
-            if (this.particles.length < 300) { // 限制最大粒子数
-                for (let i = 0; i < 2; i++) {
-                    this.particles.push(new Particle(
-                        this.canvas,
-                        this.mouse.x,
-                        this.mouse.y,
-                        true
-                    ));
-                }
-            }
+            this.mouseX = e.clientX - rect.left;
+            this.mouseY = e.clientY - rect.top;
         });
 
         this.canvas.addEventListener('mouseleave', () => {
-            this.mouse.x = null;
-            this.mouse.y = null;
+            this.mouseX = undefined;
+            this.mouseY = undefined;
         });
     }
 
@@ -185,31 +143,18 @@ class ParticleSystem {
      * 连接临近的粒子
      */
     connectParticles() {
-        const maxDistance = 100;
-        const maxConnections = 3; // 每个粒子最大连接数
-
+        const maxDistance = 150;
         for (let i = 0; i < this.particles.length; i++) {
-            let connections = 0;
-            for (let j = i + 1; j < this.particles.length && connections < maxConnections; j++) {
+            for (let j = i + 1; j < this.particles.length; j++) {
                 const dx = this.particles[i].x - this.particles[j].x;
                 const dy = this.particles[i].y - this.particles[j].y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < maxDistance) {
-                    connections++;
-                    const opacity = 1 - (distance / maxDistance);
-                    const gradient = this.ctx.createLinearGradient(
-                        this.particles[i].x,
-                        this.particles[i].y,
-                        this.particles[j].x,
-                        this.particles[j].y
-                    );
-                    gradient.addColorStop(0, this.particles[i].color.replace('rgb', 'rgba').replace(')', `, ${opacity * 0.2})`));
-                    gradient.addColorStop(1, this.particles[j].color.replace('rgb', 'rgba').replace(')', `, ${opacity * 0.2})`));
-
-                    this.ctx.strokeStyle = gradient;
-                    this.ctx.lineWidth = 1;
+                    const opacity = (1 - distance / maxDistance) * 0.5;
                     this.ctx.beginPath();
+                    this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                    this.ctx.lineWidth = 0.5;
                     this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
                     this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
                     this.ctx.stroke();
@@ -220,31 +165,48 @@ class ParticleSystem {
 
     /**
      * 动画循环
-     * @param {number} timestamp - 当前时间戳
      */
-    animate(timestamp = 0) {
-        const deltaTime = timestamp - this.lastTime;
+    animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (deltaTime >= this.frameInterval) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // 更新和绘制粒子
+        this.particles.forEach((particle, index) => {
+            particle.update();
             
-            this.particles = this.particles.filter(particle => !particle.isDead());
-            
-            this.particles.forEach(particle => {
-                particle.update();
-                particle.draw(this.ctx);
-            });
-            
-            this.connectParticles();
-            
-            this.lastTime = timestamp - (deltaTime % this.frameInterval);
-        }
-        
-        requestAnimationFrame((timestamp) => this.animate(timestamp));
+            // 鼠标交互
+            if (this.mouseX !== undefined && this.mouseY !== undefined) {
+                const dx = particle.x - this.mouseX;
+                const dy = particle.y - this.mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.mouseRadius) {
+                    const force = (this.mouseRadius - distance) / this.mouseRadius;
+                    const angle = Math.atan2(dy, dx);
+                    particle.x += Math.cos(angle) * force * 2;
+                    particle.y += Math.sin(angle) * force * 2;
+                }
+            }
+
+            particle.draw(this.ctx);
+
+            // 替换死亡的粒子
+            if (particle.isDead()) {
+                this.particles[index] = new Particle(
+                    this.canvas,
+                    Math.random() * this.canvas.width,
+                    Math.random() * this.canvas.height
+                );
+            }
+        });
+
+        // 连接临近的粒子
+        this.connectParticles();
+
+        requestAnimationFrame(() => this.animate());
     }
 }
 
 // 当DOM加载完成后初始化粒子系统
 document.addEventListener('DOMContentLoaded', () => {
-    new ParticleSystem();
+    new ParticleSystem('particleCanvas');
 }); 

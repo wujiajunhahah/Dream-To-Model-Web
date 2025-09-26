@@ -58,6 +58,16 @@ class Dream(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # 新增字段
+    mood = db.Column(db.String(50))  # 梦境情绪
+    style = db.Column(db.String(50))  # 艺术风格
+    blockchain = db.Column(db.String(20), default='ethereum')  # 区块链类型
+    initial_price = db.Column(db.Float, default=0.1)  # 初始价格
+    royalty = db.Column(db.Float, default=2.5)  # 版税
+    is_public = db.Column(db.Boolean, default=True)  # 是否公开
+    model_url = db.Column(db.String(200))  # 3D模型URL
+    image_url = db.Column(db.String(200))  # 预览图URL
+    
     # 元数据
     tags = db.Column(db.String(200))  # 以逗号分隔的标签
     status = db.Column(db.String(20), default='pending')  # pending, processing, completed, failed
@@ -78,6 +88,14 @@ class Dream(db.Model):
             'title': self.title,
             'description': self.description,
             'model_file': self.model_file,
+            'model_url': self.model_url,
+            'image_url': self.image_url,
+            'mood': self.mood,
+            'style': self.style,
+            'blockchain': self.blockchain,
+            'initial_price': self.initial_price,
+            'royalty': self.royalty,
+            'is_public': self.is_public,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'tags': self.tags.split(',') if self.tags else [],

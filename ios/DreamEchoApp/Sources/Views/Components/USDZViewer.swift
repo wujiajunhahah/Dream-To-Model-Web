@@ -4,38 +4,34 @@ import ARKit
 
 struct USDZViewer: View {
     let url: URL?
-
-    @State private var isPresented = false
+    @State private var showQuickLook = false
 
     var body: some View {
-        Group {
+        ZStack {
             if let url {
                 RealityPreview(url: url)
-                    .onTapGesture {
-                        isPresented.toggle()
-                    }
-                    .sheet(isPresented: $isPresented) {
+                    .onTapGesture { showQuickLook = true }
+                    .sheet(isPresented: $showQuickLook) {
                         QuickLookPreview(url: url)
                     }
             } else {
                 Placeholder()
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassBorder()
     }
+}
 
-    private struct Placeholder: View {
-        var body: some View {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                        Text("正在加载USDZ模型")
-                            .foregroundStyle(.secondary)
-                    }
-                )
+private struct Placeholder: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("正在加载 USDZ")
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.ultraThinMaterial)
     }
 }
 
@@ -45,9 +41,7 @@ private struct RealityPreview: UIViewRepresentable {
     func makeUIView(context: Context) -> ARView {
         let view = ARView(frame: .zero)
         view.environment.background = .color(.black)
-        Task {
-            await loadModel(into: view)
-        }
+        Task { await loadModel(into: view) }
         return view
     }
 
@@ -56,13 +50,13 @@ private struct RealityPreview: UIViewRepresentable {
     private func loadModel(into view: ARView) async {
         do {
             let entity = try await ModelEntity.loadAsync(contentsOf: url)
-            let anchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
-            anchor.scale = SIMD3<Float>(repeating: 0.6)
+            let anchor = AnchorEntity(world: .zero)
+            entity.scale = SIMD3<Float>(repeating: 0.6)
             anchor.addChild(entity)
             view.scene.anchors.removeAll()
             view.scene.addAnchor(anchor)
         } catch {
-            print("USDZ load failed: \(error)")
+            print("USDZ load error: \(error)")
         }
     }
 }
@@ -78,29 +72,22 @@ private struct QuickLookPreview: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(url: url)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
 
     final class Coordinator: NSObject, QLPreviewControllerDataSource {
-        private let item: PreviewItem
+        private let item: QLPreviewItemWrapper
 
         init(url: URL) {
-            self.item = PreviewItem(url: url)
+            item = QLPreviewItemWrapper(url: url)
         }
 
         func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
 
-        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
-            item
-        }
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { item }
 
-        private final class PreviewItem: NSObject, QLPreviewItem {
+        private final class QLPreviewItemWrapper: NSObject, QLPreviewItem {
             let previewItemURL: URL?
-
-            init(url: URL) {
-                self.previewItemURL = url
-            }
+            init(url: URL) { previewItemURL = url }
         }
     }
 }

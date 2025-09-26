@@ -11,7 +11,7 @@ final class AuthService: ObservableObject {
 
     func bootstrap() async {
         do {
-            session = try await apiClient.fetchCurrentSession()
+            session = try await apiClient.fetchSession()
         } catch {
             session = nil
         }
@@ -29,12 +29,9 @@ final class AuthService: ObservableObject {
         await apiClient.logout()
         session = nil
     }
+}
 
-    func refreshSession() async {
-        do {
-            session = try await apiClient.fetchCurrentSession()
-        } catch {
-            session = nil
-        }
-    }
+struct UserSession: Codable {
+    let user: User
+    let token: String
 }

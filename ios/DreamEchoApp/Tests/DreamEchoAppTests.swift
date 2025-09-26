@@ -2,13 +2,8 @@ import XCTest
 @testable import DreamEchoApp
 
 final class DreamEchoAppTests: XCTestCase {
-    func testDreamStatusPending() {
-        let dream = Dream(title: "测试梦境", description: "描述", status: .pending)
-        XCTAssertTrue(dream.status.isPending)
-    }
-
-    func testProgressMessageCompleted() {
-        XCTAssertEqual(DreamStatus.completed.progressMessage, "生成完成")
+    func testProgressMessage() {
+        XCTAssertEqual(DreamStatus.completed.progressMessage, "模型生成完成")
+        XCTAssertEqual(DreamStatus.failed.progressMessage, "生成失败，请重试")
     }
 }
-

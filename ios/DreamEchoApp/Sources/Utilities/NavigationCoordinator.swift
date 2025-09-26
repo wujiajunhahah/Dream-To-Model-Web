@@ -5,7 +5,10 @@ final class NavigationCoordinator: ObservableObject {
     @Published var selectedTab: AppTab = .home
 
     func switchTo(_ tab: AppTab) {
-        selectedTab = tab
+        guard selectedTab != tab else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedTab = tab
+        }
     }
 }
 

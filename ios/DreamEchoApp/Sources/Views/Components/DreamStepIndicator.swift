@@ -6,16 +6,12 @@ struct DreamStepIndicator: View {
     var body: some View {
         HStack(spacing: 16) {
             ForEach(DreamCreationStep.allCases, id: \.self) { step in
-                StepIndicatorItem(step: step, isActive: step == activeStep, isCompleted: step.rawValue < activeStep.rawValue)
-
+                StepItem(step: step, isActive: step == activeStep, isCompleted: step.rawValue < activeStep.rawValue)
                 if step != DreamCreationStep.allCases.last {
                     Rectangle()
-                        .fill(.white.opacity(0.2))
+                        .fill(.white.opacity(0.18))
                         .frame(height: 1)
-                        .overlay(
-                            LinearGradient.dreamecho
-                                .opacity(step.rawValue < activeStep.rawValue ? 1 : 0.3)
-                        )
+                        .overlay(LinearGradient.dreamecho.opacity(step.rawValue < activeStep.rawValue ? 0.9 : 0.3))
                 }
             }
         }
@@ -23,7 +19,7 @@ struct DreamStepIndicator: View {
     }
 }
 
-private struct StepIndicatorItem: View {
+private struct StepItem: View {
     let step: DreamCreationStep
     let isActive: Bool
     let isCompleted: Bool
@@ -33,32 +29,21 @@ private struct StepIndicatorItem: View {
             ZStack {
                 Circle()
                     .fill(isActive ? LinearGradient.dreamecho : Color.white.opacity(0.06))
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Circle()
-                            .stroke(isCompleted ? LinearGradient.dreamecho : Color.white.opacity(0.2), lineWidth: 1.5)
-                    )
-
+                    .frame(width: 30, height: 30)
+                    .overlay(Circle().stroke(isCompleted ? LinearGradient.dreamecho : Color.white.opacity(0.2), lineWidth: 1.5))
                 if isCompleted {
                     Image(systemName: "checkmark")
+                        .foregroundStyle(.white)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
                 } else {
                     Text("\(step.rawValue + 1)")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(isActive ? .white : .white.opacity(0.6))
+                        .foregroundStyle(isActive ? .white : .white.opacity(0.6))
                 }
             }
-
             Text(step.displayTitle)
                 .font(.caption2)
                 .foregroundStyle(isActive ? LinearGradient.dreamecho : .secondary)
         }
     }
-}
-
-#Preview {
-    DreamStepIndicator(activeStep: .review)
-        .padding()
-        .background(GradientBackground())
 }

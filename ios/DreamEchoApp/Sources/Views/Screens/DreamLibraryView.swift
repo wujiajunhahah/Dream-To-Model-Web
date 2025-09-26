@@ -3,22 +3,20 @@ import SwiftUI
 struct DreamLibraryView: View {
     @EnvironmentObject private var appState: AppState
     @State private var searchText = ""
-    @State private var selectedSegment: LibrarySegment = .myDreams
-    @State private var showErrorToast = false
+    @State private var segment: LibrarySegment = .mine
+    @State private var toastMessage: String?
     @State private var isRefreshing = false
 
-    private var currentSource: [Dream] {
-        switch selectedSegment {
-        case .myDreams:
-            return appState.completedDreams
-        case .explore:
-            return Dream.sampleCompleted
+    private var source: [Dream] {
+        switch segment {
+        case .mine: return appState.completedDreams
+        case .inspiration: return Dream.showcase
         }
     }
 
     private var filteredDreams: [Dream] {
-        guard !searchText.isEmpty else { return currentSource }
-        return currentSource.filter { dream in
+        guard !searchText.isEmpty else { return source }
+        return source.filter { dream in
             dream.title.localizedCaseInsensitiveContains(searchText) ||
             dream.description.localizedCaseInsensitiveContains(searchText) ||
             dream.tags.contains(where: { $0.localizedCaseInsensitiveContains(searchText) })
@@ -29,14 +27,10 @@ struct DreamLibraryView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    DreamLibraryHeader(
-                        myCount: appState.completedDreams.count,
-                        exploreCount: Dream.sampleCompleted.count,
-                        pendingCount: appState.pendingDreams.count
-                    )
+                    LibraryHeader(completed: appState.completedDreams.count, pending: appState.pendingDreams.count, showcase: Dream.showcase.count)
 
-                    Picker("梦境视图", selection: $selectedSegment) {
-                        ForEach(LibrarySegment.allCases) { segment in
+                    Picker("梦境视图", selection: $segment) {
+                        ForEach(LibrarySegment.allCases, id: \.self) { segment in
                             Text(segment.title).tag(segment)
                         }
                     }
@@ -44,33 +38,33 @@ struct DreamLibraryView: View {
                     .glassBorder()
 
                     if filteredDreams.isEmpty {
-                        LibraryEmptyState(selectedSegment: selectedSegment)
+                        EmptyState(segment: segment)
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
+                            .padding(.top, 48)
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 24)], spacing: 24) {
                             ForEach(filteredDreams) { dream in
                                 DreamCard(dream: dream)
                                     .onTapGesture {
                                         appState.selectedDream = dream
-                                        appState.isShowingARViewer = true
+                                        appState.showARViewer = true
                                     }
                             }
                         }
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: filteredDreams)
+                        .animation(.spring(response: 0.45, dampingFraction: 0.78), value: filteredDreams)
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 48)
+                .padding(.bottom, 60)
                 .padding(.top, 16)
             }
-            .background(GradientBackground())
+            .background(LinearGradient(colors: [.dreamechoBackground, Color.black], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
             .navigationTitle("梦境档案")
-            .searchable(text: $searchText, prompt: "搜索梦境标题、关键字…")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索标题或标签")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        Task { await refreshDreams() }
+                        Task { await refresh() }
                     } label: {
                         if isRefreshing {
                             ProgressView()
@@ -81,21 +75,21 @@ struct DreamLibraryView: View {
                     .disabled(isRefreshing)
                 }
             }
-            .sheet(isPresented: $appState.isShowingARViewer) {
+            .sheet(isPresented: $appState.showARViewer) {
                 if let dream = appState.selectedDream {
-                    DreamDetailView(dream: dream)
+                    DreamDetailView(dream: dream, isPresented: $appState.showARViewer)
                         .presentationDetents([.large])
                 }
             }
         }
-        .task { await refreshDreams() }
+        .toast(message: $toastMessage)
+        .task { await refresh() }
         .onChange(of: appState.lastError) { _, newValue in
-            if newValue != nil { showErrorToast = true }
+            toastMessage = newValue
         }
-        .toast(message: appState.lastError, isPresented: $showErrorToast)
     }
 
-    private func refreshDreams() async {
+    private func refresh() async {
         guard !isRefreshing else { return }
         isRefreshing = true
         await appState.refreshDreams()
@@ -103,57 +97,47 @@ struct DreamLibraryView: View {
     }
 }
 
-private enum LibrarySegment: String, CaseIterable, Identifiable {
-    case myDreams
-    case explore
-
-    var id: String { rawValue }
+enum LibrarySegment: Int, CaseIterable {
+    case mine
+    case inspiration
 
     var title: String {
         switch self {
-        case .myDreams: return "我的梦境"
-        case .explore: return "灵感探索"
+        case .mine: return "我的梦境"
+        case .inspiration: return "灵感探索"
         }
     }
 }
 
-private struct DreamLibraryHeader: View {
-    let myCount: Int
-    let exploreCount: Int
-    let pendingCount: Int
+private struct LibraryHeader: View {
+    let completed: Int
+    let pending: Int
+    let showcase: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("捕捉你的灵感宇宙")
-                .font(.largeTitle.weight(.semibold))
-                .foregroundStyle(LinearGradient.dreamecho)
-
+            Text("梦境旅程总览").font(AppFont.heading(32)).foregroundStyle(LinearGradient.dreamecho)
             HStack(spacing: 16) {
-                LibraryStatCard(title: "已完成", value: myCount.description, subtitle: "梦境已生成")
-                LibraryStatCard(title: "生成中", value: pendingCount.description, subtitle: "DreamSync 任务")
-                LibraryStatCard(title: "灵感库", value: exploreCount.description, subtitle: "精选案例")
+                StatTile(title: "已完成", value: completed, caption: "可下载 / USDZ 预览")
+                StatTile(title: "生成中", value: pending, caption: "DreamSync 队列")
+                StatTile(title: "精选库", value: showcase, caption: "灵感案例")
             }
         }
     }
 }
 
-private struct LibraryStatCard: View {
+private struct StatTile: View {
     let title: String
-    let value: String
-    let subtitle: String
+    let value: Int
+    let caption: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text("\(value)").font(AppFont.heading(30))
+            Text(caption).font(.caption).foregroundStyle(.secondary)
         }
-        .padding(18)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -161,25 +145,20 @@ private struct LibraryStatCard: View {
     }
 }
 
-private struct LibraryEmptyState: View {
-    let selectedSegment: LibrarySegment
+private struct EmptyState: View {
+    let segment: LibrarySegment
 
     var body: some View {
         VStack(spacing: 18) {
-            Image(systemName: "sparkles.rectangle.stack")
-                .font(.system(size: 44))
-                .foregroundStyle(LinearGradient.dreamecho)
-            Text(selectedSegment == .myDreams ? "还没有生成梦境" : "暂无灵感匹配")
+            Image(systemName: "sparkles.rectangle.stack").font(.system(size: 44)).foregroundStyle(LinearGradient.dreamecho)
+            Text(segment == .mine ? "还没有生成梦境" : "灵感正在上传")
                 .font(.title3.weight(.semibold))
-            Text(selectedSegment == .myDreams
-                 ? "在梦境工坊描述你的第一个梦境，完成后会出现在这里。"
-                 : "我们正在为你准备更多精选作品，请稍后再来。")
-            .font(.callout)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
+            Text(segment == .mine ? "在梦境工坊描述你的第一个梦境，完成后将同步到这里。" : "团队正在准备更多精选作品，稍后回来查看更多灵感。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-        .padding()
-        .frame(maxWidth: 360)
+        .padding(32)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .glassBorder()
@@ -194,23 +173,12 @@ private struct DreamCard: View {
             AsyncImage(url: dream.previewImageURL) { phase in
                 switch phase {
                 case .empty:
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(.ultraThinMaterial)
-                        ProgressView()
-                    }
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
+                    image.resizable().scaledToFill()
                 case .failure:
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: 32))
-                                .foregroundStyle(.secondary)
-                        )
+                    Color.black.opacity(0.2)
+                        .overlay(Image(systemName: "photo").font(.system(size: 32)).foregroundStyle(.secondary))
                 @unknown default:
                     EmptyView()
                 }
@@ -219,13 +187,8 @@ private struct DreamCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
 
             VStack(alignment: .leading, spacing: 10) {
-                Text(dream.title)
-                    .font(.headline)
-                Text(dream.description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-
+                Text(dream.title).font(.headline)
+                Text(dream.description).font(.subheadline).foregroundStyle(.secondary).lineLimit(3)
                 if !dream.tags.isEmpty {
                     FlowLayout(alignment: .leading, spacing: 8) {
                         ForEach(dream.tags, id: \.self) { tag in
@@ -251,89 +214,75 @@ private struct DreamCard: View {
         .padding(20)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-        .glassBorder(color: .white.opacity(0.18))
+        .glassBorder()
     }
 }
 
 private struct DreamDetailView: View {
     let dream: Dream
-    @Environment(\.dismiss) private var dismiss
+    @Binding var isPresented: Bool
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    USDZViewer(url: dream.usdModelURL)
+                    USDZViewer(url: dream.modelURL)
                         .frame(height: 320)
-                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                        .glassBorder()
-
-                    VStack(alignment: .leading, spacing: 18) {
-                        Text(dream.title)
-                            .font(.largeTitle.weight(.bold))
-                        Text(dream.description)
-                            .foregroundStyle(.secondary)
-
-                        Divider().background(.white.opacity(0.2))
-
-                        InfoRow(label: "链", value: dream.blockchain.displayName, systemImage: "link")
-
-                        if let price = dream.price {
-                            InfoRow(label: "价格", value: "\(price)", systemImage: "creditcard")
-                        }
-
-                        if !dream.tags.isEmpty {
-                            InfoRow(label: "标签", value: dream.tags.joined(separator: "、"), systemImage: "tag")
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                    .glassBorder()
+                    DetailCard(dream: dream)
                 }
                 .padding()
             }
-            .background(GradientBackground())
+            .background(LinearGradient(colors: [.dreamechoBackground, Color.black], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
             .navigationTitle("梦境详情")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
+                    Button("关闭") { isPresented = false }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    ShareLink(item: dream.usdModelURL ?? URL(string: "https://dreamecho.ai")!) {
-                        Label("分享USDZ", systemImage: "square.and.arrow.up")
+                    ShareLink(item: dream.modelURL ?? URL(string: "https://dreamecho.ai")!) {
+                        Label("分享", systemImage: "square.and.arrow.up")
                     }
                 }
             }
         }
+    }
+}
+
+private struct DetailCard: View {
+    let dream: Dream
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text(dream.title).font(AppFont.heading(28))
+            Text(dream.description).font(.body).foregroundStyle(.secondary)
+            Divider().background(.white.opacity(0.2))
+            InfoRow(label: "区块链", value: dream.blockchain.displayName, icon: "link")
+            if let price = dream.price { InfoRow(label: "价格", value: "\(price)", icon: "creditcard") }
+            if let royalty = dream.royalty { InfoRow(label: "版税", value: "\(royalty)%", icon: "percent") }
+            if !dream.tags.isEmpty { InfoRow(label: "标签", value: dream.tags.joined(separator: "、"), icon: "tag") }
+        }
+        .padding(24)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassBorder()
     }
 }
 
 private struct InfoRow: View {
     let label: String
     let value: String
-    let systemImage: String
+    let icon: String
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Label(label, systemImage: systemImage)
-                .font(.subheadline.weight(.medium))
-                .labelStyle(.iconOnly)
-                .frame(width: 24)
-                .foregroundStyle(LinearGradient.dreamecho)
-
+            Image(systemName: icon).foregroundStyle(LinearGradient.dreamecho).frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.body)
+                Text(label).font(.caption).foregroundStyle(.secondary)
+                Text(value).font(.body)
             }
         }
     }
 }
-
 
 #Preview {
     DreamLibraryView()

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}设计系统 - DreamEcho{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_guide.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="style-guide">
+    <section class="section">
+        <h1 class="section-title">设计系统</h1>
+        
+        <!-- 颜色系统 -->
+        <div class="subsection">
+            <h2>颜色系统</h2>
+            <div class="color-grid">
+                <div class="color-item">
+                    <div class="color-preview" style="background: var(--primary-color)"></div>
+                    <div class="color-info">
+                        <h3>主色调</h3>
+                        <code>#6C63FF</code>
+                    </div>
+                </div>
+                <div class="color-item">
+                    <div class="color-preview" style="background: var(--secondary-color)"></div>
+                    <div class="color-info">
+                        <h3>次要色</h3>
+                        <code>#2A2A2A</code>
+                    </div>
+                </div>
+                <div class="color-item">
+                    <div class="color-preview" style="background: var(--accent-color)"></div>
+                    <div class="color-info">
+                        <h3>强调色</h3>
+                        <code>#FF6B6B</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 排版 -->
+        <div class="subsection">
+            <h2>排版</h2>
+            <div class="typography-demo">
+                <h1>标题 1</h1>
+                <h2>标题 2</h2>
+                <h3>标题 3</h3>
+                <h4>标题 4</h4>
+                <p class="body-text">正文文本样式展示。这是一段示例文字，用于展示网站中使用的主要字体和文本样式。</p>
+                <p class="small-text">小号文本样式展示。用于次要信息和注释说明。</p>
+            </div>
+        </div>
+
+        <!-- 按钮 -->
+        <div class="subsection">
+            <h2>按钮</h2>
+            <div class="button-grid">
+                <button class="btn btn-primary">主要按钮</button>
+                <button class="btn btn-secondary">次要按钮</button>
+                <button class="btn btn-outline">描边按钮</button>
+                <button class="btn btn-text">文本按钮</button>
+                <button class="btn btn-primary" disabled>禁用状态</button>
+            </div>
+        </div>
+
+        <!-- 表单元素 -->
+        <div class="subsection">
+            <h2>表单元素</h2>
+            <div class="form-demo">
+                <div class="form-group">
+                    <label for="demo-input">输入框</label>
+                    <input type="text" id="demo-input" placeholder="请输入内容">
+                </div>
+                <div class="form-group">
+                    <label for="demo-select">下拉选择</label>
+                    <select id="demo-select">
+                        <option>选项 1</option>
+                        <option>选项 2</option>
+                        <option>选项 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox">
+                        <span>复选框</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="radio-label">
+                        <input type="radio" name="demo-radio">
+                        <span>单选按钮</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片 -->
+        <div class="subsection">
+            <h2>卡片</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-header">卡片标题</div>
+                    <div class="card-body">
+                        <p>这是卡片内容区域，可以包含各种元素。</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-text">操作按钮</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.style-guide {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.section {
+    margin-bottom: 4rem;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.subsection {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.subsection h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+/* 颜色系统 */
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.color-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.color-preview {
+    height: 100px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.color-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.color-info h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.color-info code {
+    font-family: monospace;
+    color: var(--text-secondary);
+}
+
+/* 排版 */
+.typography-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.typography-demo h1,
+.typography-demo h2,
+.typography-demo h3,
+.typography-demo h4 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.body-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.small-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* 按钮网格 */
+.button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* 表单演示 */
+.form-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 400px;
+}
+
+/* 卡片网格 */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .style-guide {
+        padding: 1rem;
+    }
+
+    .subsection {
+        padding: 1.5rem;
+    }
+
+    .color-grid {
+        grid-template-columns: 1fr;
+    }
+}
+    <!-- 排版 -->
+    <section class="section">
+        <h2 class="section-title">排版</h2>
+        <div class="typography-grid">
+            <div class="font-example">
+                <h1>标题 1 - 梦境交易所</h1>
+                <h2>标题 2 - 创建新梦境</h2>
+                <h3>标题 3 - 项目背景</h3>
+                <p>正文文本 - DreamEcho 是一个革命性的平台，将您的梦境转化为独特的 3D 模型和 NFT 艺术品。</p>
+                <p class="text-secondary">次要文本 - 探索无限可能，打造属于您的数字艺术收藏。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 按钮 -->
+    <section class="section">
+        <h2 class="section-title">按钮</h2>
+        <div class="button-grid">
+            <button class="btn btn-primary">创建梦境</button>
+            <button class="btn btn-secondary">浏览作品</button>
+            <button class="btn btn-accent">铸造 NFT</button>
+        </div>
+    </section>
+
+    <!-- 输入框 -->
+    <section class="section">
+        <h2 class="section-title">输入框</h2>
+        <div class="input-grid">
+            <input type="text" class="input-field" placeholder="输入梦境描述...">
+            <input type="email" class="input-field" placeholder="输入邮箱地址...">
+            <textarea class="input-field" placeholder="详细描述您的梦境..." rows="4"></textarea>
+        </div>
+    </section>
+
+    <!-- 卡片 -->
+    <section class="section">
+        <h2 class="section-title">卡片</h2>
+        <div class="card-grid">
+            <div class="card">
+                <h3>梦境作品</h3>
+                <p>这是一个展示梦境作品的卡片示例，包含标题、描述和交互效果。</p>
+            </div>
+            <div class="card">
+                <h3>NFT 收藏品</h3>
+                <p>这是一个展示 NFT 收藏品的卡片示例，展示价格和交易信息。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 加载状态 -->
+    <section class="section">
+        <h2 class="section-title">加载状态</h2>
+        <div class="loading-spinner"></div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加卡片悬浮效果
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-8px)';
+            card.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.2)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+            card.style.boxShadow = 'none';
+        });
+    });
+});
+</script>
+{% endblock %} 

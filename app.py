@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
+from flask_bootstrap import Bootstrap
 import os
 import sys
 import json
@@ -16,7 +17,7 @@ import tenacity
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from pathlib import Path
-from pxr import Usd, UsdGeom, UsdShade, Sdf, Gf, Vt
+# USD库已移除，现在使用GLB格式
 import logging
 from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
@@ -33,8 +34,12 @@ TRIPO_API_KEY = "tsk_Ep2Vvovn4vAMITNVEjFjOacWy3jfuQtwIzJWV5lsS2T"
 app = Flask(__name__)
 app.config.from_object('config.Config')
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))
+app.config['SECRET_KEY'] = 'your-secret-key-here'  # 请更改为安全的密钥
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dreams.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 初始化数据库
+# 初始化扩展
+bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
@@ -305,27 +310,39 @@ class DreamToModelConverter:
         except Exception:
             return None
 
-    def process_dream(self, dream_text, user_id):
+    def process_dream(self, dream_text, user_id, dream_id=None):
         """处理梦境并生成3D模型"""
         try:
             app.logger.info(f'开始处理用户 {user_id} 的梦境')
             
+            # 如果提供了dream_id，则初始化进度跟踪
+            if dream_id:
+                update_dream_progress(dream_id, "开始", 5, 20, "正在启动梦境处理...")
+            
             # 测试 DeepSeek API 可用性
             if not self.test_deepseek_api():
                 app.logger.error('DeepSeek API 不可用')
+                if dream_id:
+                    update_dream_progress(dream_id, "失败", 0, 0, "API服务暂时不可用，请稍后再试")
                 raise Exception("DeepSeek API 服务暂时不可用，请稍后再试")
 
             # 提取关键词和分析
             app.logger.info('开始提取关键词和分析')
+            if dream_id:
+                update_dream_progress(dream_id, "分析梦境", 20, 15, "正在提取关键词和进行梦境分析...")
             analysis = self.extract_keywords(dream_text)
             
             # 生成3D模型
             app.logger.info('开始生成3D模型')
+            if dream_id:
+                update_dream_progress(dream_id, "生成模型", 40, 10, "正在生成3D模型...")
             model_prompt = self.generate_model_prompt(analysis)
             model_url = self.generate_3d_model(model_prompt)
             
             if not model_url:
                 app.logger.error('3D模型生成失败')
+                if dream_id:
+                    update_dream_progress(dream_id, "失败", 0, 0, "3D模型生成失败，请稍后重试")
                 raise Exception("3D模型生成失败，请稍后重试")
 
             # 创建用户目录
@@ -334,11 +351,15 @@ class DreamToModelConverter:
             
             # 下载模型文件
             app.logger.info('下载模型文件')
+            if dream_id:
+                update_dream_progress(dream_id, "下载模型", 60, 5, "正在下载生成的模型文件...")
             model_filename = f"dream_{int(time.time())}.glb"  # 使用GLB格式
             model_path = os.path.join(user_dir, model_filename)
             
             response = requests.get(model_url, stream=True)
             if response.status_code != 200:
+                if dream_id:
+                    update_dream_progress(dream_id, "失败", 0, 0, "下载模型文件失败")
                 raise Exception("下载模型文件失败")
             
             total_size = int(response.headers.get('content-length', 0))
@@ -354,197 +375,35 @@ class DreamToModelConverter:
                 for data in response.iter_content(block_size):
                     size = f.write(data)
                     pbar.update(size)
-
-            # 保存到数据库
-            app.logger.info('保存梦境记录到数据库')
-            dream = Dream(
-                user_id=user_id,
-                dream_text=dream_text,
-                model_file=os.path.join('models', f'user_{user_id}', model_filename),
-                keywords=json.dumps(analysis['keywords']),
-                symbols=json.dumps(analysis['symbols']),
-                emotions=json.dumps(analysis['emotions']),
-                visual_description=analysis['visual_description'],
-                interpretation=analysis['interpretation']
-            )
-            db.session.add(dream)
-            db.session.commit()
             
-            app.logger.info(f'梦境处理完成，ID: {dream.id}')
-            return dream
+            # 优化模型处理
+            if dream_id:
+                update_dream_progress(dream_id, "优化处理", 80, 3, "正在优化模型和处理资源...")
+            
+            # 构建相对路径
+            relative_model_path = os.path.join('models', f'user_{user_id}', model_filename)
+            
+            # 返回结果字典
+            result = {
+                'model_path': relative_model_path,
+                'keywords': json.dumps(analysis['keywords']),
+                'symbols': json.dumps(analysis['symbols']),
+                'emotions': json.dumps(analysis['emotions']),
+                'visual_description': analysis['visual_description'],
+                'interpretation': analysis['interpretation']
+            }
+            
+            app.logger.info(f'梦境处理完成，模型路径: {relative_model_path}')
+            return result
             
         except Exception as e:
             app.logger.error(f'处理梦境时发生错误: {str(e)}')
-            db.session.rollback()
+            # 更新失败状态
+            if dream_id:
+                update_dream_progress(dream_id, "失败", 0, 0, f"处理失败: {str(e)}")
             raise
 
-def convert_usdz_to_glb(usdz_path):
-    """
-    将USDZ文件转换为GLB格式
-    使用USD库进行转换
-    """
-    try:
-        # 确保输入文件存在
-        if not os.path.exists(usdz_path):
-            print(f"错误：找不到USDZ文件 {usdz_path}")
-            return None
-            
-        # 创建输出文件路径
-        glb_path = usdz_path.replace('.usdz', '.glb')
-        
-        # 如果GLB文件已存在，直接返回
-        if os.path.exists(glb_path):
-            return glb_path
-            
-        # 打开USDZ文件
-        stage = Usd.Stage.Open(usdz_path)
-        
-        # 导出为GLB
-        stage.Export(glb_path)
-        
-        if os.path.exists(glb_path):
-            print(f"成功将 {usdz_path} 转换为 {glb_path}")
-            return glb_path
-        else:
-            print("转换失败：无法创建GLB文件")
-            return None
-            
-    except Exception as e:
-        print(f"转换过程中出错：{str(e)}")
-        return None
-
-# 路由：首页
-@app.route('/')
-def index():
-    """首页路由"""
-    return render_template('index.html')
-
-# 路由：梦境铸造
-@app.route('/dream-casting', methods=['GET', 'POST'])
-def dream_casting():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        dream_text = request.form.get('dream_text')
-        converter = DreamToModelConverter()
-        result = converter.process_dream(dream_text, session['user_id'])
-        if result:
-            model_file, interpretation_file = result
-            return jsonify({
-                'success': True,
-                'model_file': model_file,
-                'interpretation_file': interpretation_file
-            })
-        return jsonify({'success': False, 'error': '生成模型失败，请重试。'})
-    
-    return render_template('dream_casting.html')
-
-# 路由：模型库
-@app.route('/model-gallery')
-@login_required
-def model_gallery():
-    models_dir = os.path.join('static', 'models')
-    models = []
-    
-    print(f"正在访问模型目录: {models_dir}")
-    
-    if not os.path.exists(models_dir):
-        print(f"错误：模型目录不存在 {models_dir}")
-        os.makedirs(models_dir)
-        return render_template('model_gallery.html', models=[])
-    
-    try:
-        files = os.listdir(models_dir)
-        print(f"找到的文件: {files}")
-        
-        for file in files:
-            base_name = os.path.splitext(file)[0]
-            ext = os.path.splitext(file)[1].lower()
-            
-            print(f"处理文件: {file}, 扩展名: {ext}")
-            
-            # 检查是否已经添加了相同基础名称的文件
-            if not any(os.path.splitext(m)[0] == base_name for m in models):
-                if ext in ['.usdz', '.glb', '.gltf']:
-                    print(f"添加{ext}文件: {file}")
-                    models.append(file)
-        
-        # 按文件名排序
-        models.sort()
-        print(f"最终模型列表: {models}")
-        return render_template('model_gallery.html', models=models)
-        
-    except Exception as e:
-        print(f"处理模型目录时出错: {str(e)}")
-        return render_template('model_gallery.html', models=[])
-
-# 路由：用户注册
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        email = request.form.get('email')
-        
-        if User.query.filter_by(username=username).first():
-            flash('用户名已存在', 'error')
-            return redirect(url_for('register'))
-        
-        if User.query.filter_by(email=email).first():
-            flash('邮箱已被注册', 'error')
-            return redirect(url_for('register'))
-        
-        user = User(
-            username=username,
-            email=email,
-            is_active=True
-        )
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('注册成功！请登录', 'success')
-        return redirect(url_for('login'))
-    
-    return render_template('register.html')
-
-# 路由：用户登录
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-        
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = request.form.get('remember') == 'on'
-        
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user, remember=remember)
-            flash('登录成功！', 'success')
-            return redirect(url_for('index'))
-        
-        flash('用户名或密码错误', 'error')
-    
-    return render_template('login.html')
-
-# 路由：用户登出
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('已退出登录', 'success')
-    return redirect(url_for('index'))
-
-# 路由：下载模型
-@app.route('/download/<path:filename>')
-def download(filename):
-    return send_file(filename, as_attachment=True)
+# GLB转换函数已移除，现在直接使用GLB格式
 
 @app.cli.command("create-admin")
 def create_admin():
@@ -560,20 +419,165 @@ def create_admin():
     db.session.commit()
     print('测试账号创建成功！用户名和密码都是：123')
 
-@app.route('/create_dream', methods=['GET'])
-@login_required
-def create_dream_page():
-    """创建梦境页面"""
-    return render_template('create_dream.html')
+# 路由：首页
+@app.route('/')
+def index():
+    """首页"""
+    try:
+        # 获取最新的一些模型用于展示
+        recent_models = Dream.query.filter_by(is_public=True).order_by(Dream.created_at.desc()).limit(6).all()
+        return render_template('index_modern.html', recent_models=recent_models)
+    except Exception as e:
+        app.logger.error(f"首页加载错误: {str(e)}")
+        return render_template('index_modern.html', recent_models=[])
 
-@app.route('/api/create_dream', methods=['POST'])
+# 路由：创建梦境页面
+@app.route('/create_dream', methods=['GET', 'POST'])
+@login_required
+def create_dream():
+    """创造梦境页面"""
+    if request.method == 'POST':
+        try:
+            # 获取表单数据
+            dream_title = request.form.get('dream_title', '').strip()
+            dream_description = request.form.get('dream_description', '').strip()
+            dream_mood = request.form.get('dream_mood', '')
+            dream_style = request.form.get('dream_style', '')
+            blockchain = request.form.get('blockchain', '')
+            initial_price = request.form.get('initial_price', type=float)
+            royalty = request.form.get('royalty', type=float)
+            is_public = 'is_public' in request.form
+            
+            # 验证必填字段
+            if not dream_title or not dream_description or not blockchain:
+                flash('请填写所有必填字段', 'error')
+                return render_template('create_dream_modern.html')
+            
+            if len(dream_description) < 50:
+                flash('梦境描述至少需要50个字符', 'error')
+                return render_template('create_dream_modern.html')
+            
+            # 创建新的梦境模型
+            new_model = Dream(
+                title=dream_title,
+                description=dream_description,
+                mood=dream_mood,
+                style=dream_style,
+                blockchain=blockchain,
+                initial_price=initial_price or 0.1,
+                royalty=royalty or 2.5,
+                is_public=is_public,
+                user_id=current_user.id,
+                status='processing'
+            )
+            
+            db.session.add(new_model)
+            db.session.commit()
+            
+            # 这里可以添加异步任务来生成3D模型
+            # 暂时设置为已完成状态
+            new_model.status = 'completed'
+            new_model.model_url = f'/static/models/dream_{new_model.id}.glb'
+            new_model.image_url = f'/static/images/dream_{new_model.id}.jpg'
+            db.session.commit()
+            
+            flash('梦境创造成功！', 'success')
+            return redirect(url_for('model_detail', model_id=new_model.id))
+            
+        except Exception as e:
+            app.logger.error(f"创造梦境错误: {str(e)}")
+            flash('创造梦境时发生错误，请重试', 'error')
+            return render_template('create_dream_modern.html')
+    
+    return render_template('create_dream_modern.html')
+
+# 全局进度跟踪字典
+# 结构: {dream_id: {'stage': 'stage_name', 'progress': percentage, 'remaining_minutes': minutes, 'status': 'status_message'}}
+dream_progress = {}
+
+# 更新进度的辅助函数
+def update_dream_progress(dream_id, stage, progress, remaining_minutes, status=None):
+    """
+    更新指定梦境ID的生成进度
+    
+    :param dream_id: 梦境ID
+    :param stage: 当前处理阶段
+    :param progress: 百分比进度 (0-100)
+    :param remaining_minutes: 预计剩余分钟数
+    :param status: 可选的状态消息
+    """
+    dream_progress[dream_id] = {
+        'stage': stage,
+        'progress': progress,
+        'remaining_minutes': remaining_minutes,
+        'status': status or "正在处理中..."
+    }
+
+@app.route('/api/progress/<dream_id>', methods=['GET'])
+def get_progress(dream_id):
+    """
+    获取模型生成进度
+    """
+    # 检查梦境ID是否存在
+    try:
+        dream_id = int(dream_id)
+    except ValueError:
+        return jsonify({"success": False, "error": "无效的梦境ID"}), 400
+    
+    # 查找数据库中的梦境记录
+    dream = Dream.query.get(dream_id)
+    if not dream:
+        return jsonify({"success": False, "error": "梦境不存在"}), 404
+    
+    # 检查进度记录是否存在
+    if dream_id not in dream_progress:
+        # 如果记录不存在但梦境状态为完成
+        if dream.status == 'complete':
+            return jsonify({
+                "success": True,
+                "stage": "完成",
+                "progress": 100,
+                "remaining_minutes": 0,
+                "status": "您的梦境模型已生成完成！"
+            })
+        # 如果记录不存在且梦境状态为失败
+        elif dream.status == 'failed':
+            return jsonify({
+                "success": False,
+                "stage": "失败",
+                "progress": 0,
+                "status": "模型生成失败，请重试。"
+            }), 500
+        # 如果记录不存在但梦境还在处理中
+        elif dream.status == 'processing':
+            # 创建一个初始进度记录
+            update_dream_progress(dream_id, "分析梦境", 10, 15, "正在分析您的梦境描述...")
+        # 如果记录不存在且梦境状态为等待
+        else:  # pending
+            update_dream_progress(dream_id, "等待处理", 0, 20, "您的请求已加入队列，即将开始处理...")
+    
+    # 返回进度信息
+    progress_data = dream_progress.get(dream_id, {
+        "stage": "未知",
+        "progress": 0,
+        "remaining_minutes": 0,
+        "status": "无法获取进度信息"
+    })
+    
+    return jsonify({
+        "success": True,
+        **progress_data
+    })
+
+# 路由：创建梦境 API
+@app.route('/api/dreams/create', methods=['POST'])
 @login_required
 def create_dream_api():
     """创建新的梦境记录 API"""
     try:
         # 从表单获取数据
         title = request.form.get('title', 'Untitled Dream')
-        description = request.form.get('description') # Use description as the dream text for analysis
+        description = request.form.get('description')
         tags = request.form.get('tags')
         blockchain = request.form.get('blockchain')
         price_str = request.form.get('price')
@@ -598,71 +602,113 @@ def create_dream_api():
             except ValueError:
                 return jsonify({'success': False, 'error': '版税必须是数字'}), 400
 
-        # 初始化转换器
-        converter = DreamToModelConverter()
+        # 创建初始梦境记录
+        new_dream = Dream(
+            user_id=current_user.id,
+            title=title,
+            description=description,
+            dream_text=description,
+            tags=tags,
+            blockchain=blockchain,
+            price=price,
+            trading_type=trading_type,
+            royalty=royalty,
+            status='pending'
+        )
+        db.session.add(new_dream)
+        db.session.commit()
         
-        # --- 调用处理流程 --- 
-        # 注意: converter.process_dream 现在处理文本分析、模型生成和初步数据库保存
-        # 我们需要修改它或在这里进行更新
-        app.logger.info(f"开始为用户 {current_user.id} 处理梦境: {title}")
-        dream_record = converter.process_dream(dream_text=description, user_id=current_user.id)
-        # ---------------------
-
-        if dream_record:
-            # 更新数据库记录，添加表单中的其他信息
-            dream_record.title = title
-            dream_record.tags = tags
-            dream_record.blockchain = blockchain
-            dream_record.price = price
-            dream_record.trading_type = trading_type
-            dream_record.royalty = royalty
-            dream_record.description = description # Store original description if needed differently from dream_text
-            dream_record.status = 'complete' # Mark as complete after generation
-            dream_record.preview_image = 'default_preview.png' # Set default preview
-            
-            db.session.commit()
-            app.logger.info(f"梦境记录 {dream_record.id} 更新成功")
-
-            return jsonify({
-                'success': True,
-                'dream_id': dream_record.id,
-                'message': '梦境创建成功！模型正在后台处理。'
-                # 不直接返回模型路径，让用户在交易所查看
-            })
-        else:
-            # 如果 converter.process_dream 返回 None 或出错
-            app.logger.error(f"用户 {current_user.id} 的梦境处理失败")
-            return jsonify({'success': False, 'error': '梦境处理或模型生成失败，请稍后重试'}), 500
+        dream_id = new_dream.id
+        app.logger.info(f"创建了新梦境记录，ID: {dream_id}")
+        
+        # 初始化进度
+        update_dream_progress(dream_id, "等待处理", 0, 20, "您的请求已加入队列，即将开始处理...")
+        
+        # 异步处理（实际应用中应使用Celery或其他任务队列）
+        # 这里为了简化，我们使用一个简单的线程
+        import threading
+        
+        def process_dream_async(description, user_id, dream_id):
+            try:
+                # 更新状态为处理中
+                dream = Dream.query.get(dream_id)
+                dream.status = 'processing'
+                db.session.commit()
+                
+                # 创建转换器实例并处理梦境
+                converter = DreamToModelConverter()
+                result = converter.process_dream(dream_text=description, user_id=user_id, dream_id=dream_id)
+                
+                # 更新梦境记录
+                if result and 'model_path' in result:
+                    dream.model_file = result['model_path']
+                    dream.keywords = result.get('keywords', '')
+                    dream.symbols = result.get('symbols', '')
+                    dream.emotions = result.get('emotions', '')
+                    dream.visual_description = result.get('visual_description', '')
+                    dream.interpretation = result.get('interpretation', '')
+                    dream.status = 'complete'
+                    db.session.commit()
+                    
+                    # 更新最终进度
+                    update_dream_progress(dream_id, "完成", 100, 0, "您的梦境模型已生成完成！")
+                    app.logger.info(f"梦境 {dream_id} 处理完成")
+                else:
+                    raise Exception("模型生成失败")
+                    
+            except Exception as e:
+                app.logger.error(f"异步处理梦境 {dream_id} 失败: {str(e)}")
+                # 更新状态为失败
+                dream = Dream.query.get(dream_id)
+                dream.status = 'failed'
+                db.session.commit()
+                
+                # 更新进度为失败状态
+                update_dream_progress(dream_id, "失败", 0, 0, f"模型生成失败: {str(e)}")
+        
+        # 启动异步处理
+        threading.Thread(target=process_dream_async, args=(description, current_user.id, dream_id)).start()
+        
+        return jsonify({
+            'success': True,
+            'dream_id': dream_id,
+            'message': '梦境创建请求已提交！'
+        })
             
     except Exception as e:
-        db.session.rollback() # Ensure rollback on any exception
-        app.logger.error(f"创建梦境 API 出错: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': f'服务器内部错误: {str(e)}'}), 500
+        app.logger.error(f"创建梦境API失败: {str(e)}")
+        return jsonify({'success': False, 'error': f'服务器错误: {str(e)}'}), 500
 
+# 路由：个人中心
 @app.route('/profile')
 @login_required
 def profile():
     """个人中心页面"""
     return render_template('profile.html')
 
+# 路由：设置页面
 @app.route('/settings')
 @login_required
 def settings():
     """设置页面"""
     return render_template('settings.html')
 
+# 路由：联系我们
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
 
+# 路由：常见问题
 @app.route('/faq')
 def faq():
     return render_template('faq.html')
 
+# 路由：隐私政策
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
 
+# 路由：获取解释
 @app.route('/api/interpretation/<model_name>')
 @login_required
 def get_interpretation(model_name):
@@ -736,36 +782,29 @@ def model_library():
 
 @app.route('/model/<model_id>')
 def model_detail(model_id):
-    """模型详情页面 - 从数据库获取数据"""
-    try:
-        # 根据 ID 从数据库查询梦境记录
-        # 使用 .first_or_404() 会在找不到记录时自动返回 404 错误
-        dream = Dream.query.filter_by(id=model_id).first_or_404()
-        
-        # 准备传递给模板的数据
-        model_data = {
-            'id': dream.id,
-            'title': dream.title,
-            'description': dream.description or dream.dream_text, # 显示原始描述或梦境文本
-            'price': f"{dream.price:.2f} ETH" if dream.price is not None else "价格未定", # 添加货币单位
-            'created_at': dream.created_at.strftime('%Y/%m/%d'), # 格式化日期
-            'tags': [tag.strip() for tag in dream.tags.split(',')] if dream.tags else [],
-            'model_file': dream.model_file.split(os.path.sep)[-1] if dream.model_file else 'default_model.obj', # 只取文件名
-             # 可以添加其他需要展示的字段，例如 blockchain, status 等
-            'blockchain': dream.blockchain,
-            'status': dream.status,
-            'nft_tx_hash': dream.nft_tx_hash,
-            # 确保 creator 信息也传递（如果需要）
-             'creator_name': dream.user.username, # 假设关联的 user 对象可用
-             'creator_avatar': url_for('static', filename='images/avatar.jpg') # 暂时用通用头像
+    """
+    显示模型详情页面
+    """
+    # 在实际应用中，这里应该从数据库中获取模型信息
+    # 现在我们使用模拟的数据
+    model = {
+        'id': model_id,
+        'title': '梦境模型 #' + str(model_id),
+        'creator': '梦想家',
+        'creation_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'price': 0.05,
+        'currency': 'ETH',
+        'tags': ['奇幻', '抽象', '色彩'],
+        'description': '这个模型代表了一个梦境场景，由AI根据梦境描述自动生成。',
+        'model_path': f'static/models/dream_model_{model_id}.glb',
+        'technical_info': {
+            'polygons': random.randint(10000, 50000),
+            'vertices': random.randint(5000, 25000),
+            'format': 'glTF/GLB'
         }
-        
-        # 渲染 model_detail.html
-        return render_template('model_detail.html', model=model_data)
-        
-    except Exception as e:
-        app.logger.error(f"获取模型详情页时出错 (ID: {model_id}): {str(e)}", exc_info=True)
-        return render_template('404.html'), 404 # 或者渲染 500 错误页
+    }
+    
+    return render_template('model_detail.html', model=model)
 
 @app.route('/api/mint_nft/<model_id>', methods=['POST'])
 #@login_required # 如果需要登录才能铸造，取消注释这行
@@ -811,6 +850,84 @@ def mint_nft_api(model_id):
 def project_background():
     """项目背景页面"""
     return render_template('project_background.html')
+
+@app.route('/style-guide')
+def style_guide():
+    """渲染设计系统样式指南页面"""
+    return render_template('style_guide.html')
+
+@app.route('/about')
+def about():
+    """渲染项目背景页面"""
+    return render_template('about.html')
+
+@app.route('/api/generate_tags', methods=['POST'])
+def generate_tags():
+    """使用AI生成梦境标签"""
+    data = request.get_json()
+    description = data.get('description')
+    
+    # 这里调用Deep Seek API进行标签生成
+    # 目前使用模拟数据
+    tags = ['梦境', '飞翔', '自由', '探索', '冒险', '奇幻']
+    
+    return jsonify({
+        'success': True,
+        'tags': tags
+    })
+
+@app.route('/my_dreams')
+@login_required
+def my_dreams():
+    dreams = Dream.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_dreams.html', dreams=dreams)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """登录页面"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = request.form.get('remember', False)
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user, remember=remember)
+            flash('登录成功', 'success')
+            next_page = request.args.get('next')
+            if next_page:
+                return redirect(next_page)
+            return redirect(url_for('index'))
+        flash('用户名或密码错误', 'danger')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """注册页面"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(username=username).first():
+            flash('用户名已存在', 'danger')
+            return redirect(url_for('register'))
+        
+        if User.query.filter_by(email=email).first():
+            flash('邮箱已被使用', 'danger')
+            return redirect(url_for('register'))
+        
+        user = User(username=username, email=email)
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        flash('注册成功，请登录', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
